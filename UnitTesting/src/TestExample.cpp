@@ -8,7 +8,7 @@ void TestExample::MockDataForTests()
 	Score = 500;
 }
 
-bool TestExample::RunTest(ETestExampleTests TestToRun, std::string& OutErrMsg)
+bool TestExample::RunTest(ETestExampleTests TestToRun)
 {
 	switch (TestToRun)
 	{
@@ -27,7 +27,7 @@ bool TestExample::RunTest(ETestExampleTests TestToRun, std::string& OutErrMsg)
 
 			if (bExceedMaxSpeed)
 			{
-				OutErrMsg.append("Exceed Max Speed!");
+				LastErrorStr.append("Exceed Max Speed!");
 				return false;
 			}
 

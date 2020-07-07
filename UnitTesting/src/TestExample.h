@@ -23,6 +23,6 @@ private:
 protected:
 
 	void MockDataForTests() override;
-	bool RunTest(ETestExampleTests TestToRun, std::string& OutErrMsg) override;
+	bool RunTest(ETestExampleTests TestToRun) override;
 
 };

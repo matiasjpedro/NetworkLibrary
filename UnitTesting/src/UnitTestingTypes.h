@@ -18,16 +18,19 @@ static std::ostream& operator<<(std::ostream& os, enumName enumValue) {\
 	return os << enumName##String[(int)enumValue]; \
 }
 
+static std::string LastErrorStr;
+
 template<typename T>
 class ITesteable
 {
+
 public:
 
 	void RunTests()
 	{
-		MockDataForTests();
+		LastErrorStr.clear();
 
-		std::string OutErrMsg;
+		MockDataForTests();
 
 		//Print the name of the enum which is going to be tested:
 		std::cout << "[" << (T)((int)T::LENGHT)  << "]" << std::endl;
@@ -38,14 +41,14 @@ public:
 		{
 			std::cout << std::endl << "Start test: " << (T)i << std::endl;
 
-			if (RunTest((T)i, OutErrMsg))
+			if (RunTest((T)i))
 			{
 				succeedTest++;
 				std::cout << "Test results: [SUCCEED]" << std::endl;
 			}
 			else
 			{
-				std::cout << "Test results: [FAIL] -> ErrMsg: " << OutErrMsg << std::endl; 
+				std::cout << "Test results: [FAIL] -> ErrMsg: " << LastErrorStr << std::endl;
 			}
 		}
 
@@ -58,5 +61,5 @@ public:
 protected:
 
 	virtual void MockDataForTests() {};
-	virtual bool RunTest(T TestToRun, std::string& OutErrMsg) = 0;
+	virtual bool RunTest(T TestToRun) = 0;
 };

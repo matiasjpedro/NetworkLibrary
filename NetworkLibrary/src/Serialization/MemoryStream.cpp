@@ -161,27 +161,28 @@ void MemoryStream::SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip)
 void MemoryStream::SerializeQuaternion(glm::quat& InQuaternion)
 {
 	// for 1 and -1 32767 should be enough precision
-	const float Precision = (2.f / 2147483647.5f);
+	const float Precision = (2.f / 32767.f);
 	uint64_t FixedValue = 0;
 	bool bIsNegative;
 
 	if (bIsReading)
 	{
-		SerializePrim(FixedValue, 4);
+		SerializePrim(FixedValue, 2);
 		InQuaternion.x = ConvertFromFixed(FixedValue, -1.f, Precision);
 
 		FixedValue = 0;
-		SerializePrim(FixedValue, 4);
+		SerializePrim(FixedValue, 2);
 		InQuaternion.y = ConvertFromFixed(FixedValue, -1.f, Precision);
 
 		FixedValue = 0;
-		SerializePrim(FixedValue, 4);
+		SerializePrim(FixedValue, 2);
 		InQuaternion.z = ConvertFromFixed(FixedValue, -1.f, Precision);
 
-		InQuaternion.w = sqrtf(1.f -
-			(InQuaternion.x * InQuaternion.x) +
+		const float Squared = (InQuaternion.x * InQuaternion.x) +
 			(InQuaternion.y * InQuaternion.y) +
-			(InQuaternion.z * InQuaternion.z));
+			(InQuaternion.z * InQuaternion.z);
+
+		InQuaternion.w = glm::sqrt(1.f - Squared);
 
 		SerializePrim(bIsNegative, 1);
 
@@ -192,14 +193,16 @@ void MemoryStream::SerializeQuaternion(glm::quat& InQuaternion)
 	}
 	else
 	{
+		InQuaternion = glm::normalize(InQuaternion);
+
 		FixedValue = ConvertToFixed(InQuaternion.x, -1.f, Precision);
-		SerializePrim(FixedValue, 4);
+		SerializePrim(FixedValue, 2);
 
 		FixedValue = ConvertToFixed(InQuaternion.y, -1.f, Precision);
-		SerializePrim(FixedValue, 4);
+		SerializePrim(FixedValue, 2);
 
 		FixedValue = ConvertToFixed(InQuaternion.z, -1.f, Precision);
-		SerializePrim(FixedValue, 4);
+		SerializePrim(FixedValue, 2);
 
 		bIsNegative = InQuaternion.w < 0;
 		SerializePrim(bIsNegative, 1);
