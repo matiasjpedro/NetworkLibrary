@@ -4,8 +4,8 @@
 #include <vector>
 #include "INetSerializable.h"
 #include "ByteSwapper.h"
-#include "Temp.h"
 #include <string>
+#include "glm/fwd.hpp"
 
 //Temporary, 0 for Little-Endian, 1 for Big-Endian
 #define STREAM_ENDIANNES 0
@@ -64,8 +64,8 @@ public:
 
 	virtual void SerializeBool(bool& Value);
 
-	void SerializeVector3(Vector3& InVector3, uint8_t AxisToSkip = 0);
-	void SerializeQuaternion(Quaternion& InQuaternion);
+	void SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip = 0);
+	void SerializeQuaternion(glm::quat& InQuaternion);
 
 	//Helpers
 	const char* GetBufferPtr() const { return mBuffer; }

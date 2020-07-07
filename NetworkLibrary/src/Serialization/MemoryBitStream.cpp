@@ -9,7 +9,6 @@ void MemoryBitStream::SerializeBitsRAW(void* Data, size_t InBitCount)
 	//Read all the bits
 	while (InBitCount > 8)
 	{
-		//Cast it to int otherwise it will try to use the template function
 		SerializeBits_Internal(*DestByte, 8);
 		++DestByte;
 		InBitCount -= 8;
@@ -18,7 +17,6 @@ void MemoryBitStream::SerializeBitsRAW(void* Data, size_t InBitCount)
 	//Read anything left
 	if (InBitCount > 0)
 	{
-		//Cast it to int otherwise it will try to use the template function
 		SerializeBits_Internal(*DestByte, InBitCount);
 	}	
 }

@@ -4,6 +4,8 @@
 #include "Serialization/INetSerializable.h"
 #include "Serialization/Compression.h"
 #include "Serialization/MemoryBitStream.h"
+#include "glm/vec3.hpp"
+#include "glm/ext/quaternion_float.hpp"
 
 #pragma region ITesteable
 #define SERIALIZATION_TESTS_ENUM(DO) \
@@ -139,33 +141,33 @@ bool TestNetSerializableVector()
 template<typename T>
 bool TestVector3()
 {
-	Vector3 WriteVector3 = Vector3(5, 3, 5);
+	glm::vec3 WriteVector3 = glm::vec3(5.f, 3.f, 5.f);
 	T WriteStream = T();
 
 	WriteStream.SerializeVector3(WriteVector3, EAxisToSkip::Z);
 
-	Vector3 ReadVector3;
+	glm::vec3 ReadVector3;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
 	ReadStream.SerializeVector3(ReadVector3);
 
 	// As these are compressed I should allow the compression margin as true, I should override the operator
-	return WriteVector3.X == ReadVector3.X && WriteVector3.Y == ReadVector3.Y && ReadVector3.Z == 0;
+	return WriteVector3.x == ReadVector3.x && WriteVector3.y == ReadVector3.y && ReadVector3.z == 0;
 }
 
 template<typename T>
 bool TestQuaternion()
 {
-	Quaternion WriteQuat = Quaternion(-0.890f, 0.001f, 0.432f, -0.144f);
+	glm::quat WriteQuat = glm::quat(-0.890f, 0.001f, 0.432f, -0.144f);
 	T WriteStream = T();
 
 	WriteStream.SerializeQuaternion(WriteQuat);
 
-	Quaternion ReadQuat;
+	glm::quat ReadQuat;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
 	ReadStream.SerializeQuaternion(ReadQuat);
 
 	// As these are compressed I should allow the compression margin as true, I should override the operator
-	return WriteQuat.X == ReadQuat.X && WriteQuat.Y == ReadQuat.Y && WriteQuat.Z == ReadQuat.Z && WriteQuat.W == ReadQuat.W;
+	return WriteQuat.x == ReadQuat.x && WriteQuat.y == ReadQuat.y && WriteQuat.z == ReadQuat.z && WriteQuat.w == ReadQuat.w;
 }
 
 class SerializationTests : public ITesteable<ESerializationTests>

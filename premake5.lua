@@ -25,12 +25,14 @@ project "NetworkLibrary"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"vendor/glm/glm/fwd.hpp"
 	}
 	
 	includedirs
 	{
-		"vendor/WS2/include"
+		"vendor/WS2/include",
+		"vendor/glm"
 	}
 	
 	filter "system:windows"
@@ -59,8 +61,9 @@ project "Chat"
 	
 	includedirs
 	{
-		"vendor/WS2/include",
-		"NetworkLibrary/src"
+		"NetworkLibrary/src",
+		"vendor/glm",
+		"vendor/WS2/include"
 	}
 	
 	filter "system:windows"
@@ -90,7 +93,8 @@ project "UnitTesting"
 	includedirs
 	{
 		"NetworkLibrary/src",
-		"Chat/src"
+		"vendor/glm",
+		"Chat/src",
 	}
 	
 	filter "system:windows"
