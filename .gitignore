@@ -1,0 +1,10 @@
+# Visual Studio files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+
+# Specific ignores
+**/bin/
+**/intermediate/
