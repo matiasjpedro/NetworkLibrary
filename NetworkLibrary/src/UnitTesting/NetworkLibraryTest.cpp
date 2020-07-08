@@ -1,8 +1,8 @@
+#include "NetworkLibraryTests.h"
 #include "SerializationTests.h"
 
-int main()
+void NetworkLibraryTests::RunInternalTests()
 {
 	SerializationTests SerTest;
 	SerTest.RunTests();
 }
-

@@ -83,10 +83,10 @@ void MemoryStream::SerializeNet(INetSerializable& NetSerializable)
 void MemoryStream::SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip)
 {
 	// Suppose this is our world bounds
-	const int WorldHalfBounds = 4000 / 2;
+	constexpr int WorldHalfBounds = 4000 / 2;
 
 	// Suppose in the client the precision of this position only need to be this one.
-	const float ClientRequiredPrecision = 0.1f;
+	constexpr float ClientRequiredPrecision = 0.1f;
 
 	const uint8_t LenghtPerComp = GetMaxLenghtGivenFixedPoint(WorldHalfBounds, WorldHalfBounds, ClientRequiredPrecision);
 
@@ -161,7 +161,7 @@ void MemoryStream::SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip)
 void MemoryStream::SerializeQuaternion(glm::quat& InQuaternion)
 {
 	// for 1 and -1 32767 should be enough precision
-	const float Precision = (2.f / 32767.f);
+	constexpr float Precision = (2.f / 32767.f);
 	uint64_t FixedValue = 0;
 	bool bIsNegative;
 

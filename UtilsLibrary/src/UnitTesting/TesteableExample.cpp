@@ -1,6 +1,6 @@
-#include "TestExample.h"
+#include "TesteableExample.h"
 
-void TestExample::MockDataForTests()
+void TesteableExample::MockDataForTests()
 {
 	Damage = 10;
 	Health = 100;
@@ -8,19 +8,19 @@ void TestExample::MockDataForTests()
 	Score = 500;
 }
 
-bool TestExample::RunTest(ETestExampleTests TestToRun)
+bool TesteableExample::RunTest(ETesteableExampleTests TestToRun)
 {
 	switch (TestToRun)
 	{
-		case ETestExampleTests::TEST_DMG:
+		case ETesteableExampleTests::TEST_DMG:
 		{
 			return Damage == 10;
 		}
-		case ETestExampleTests::TEST_HEALTH:
+		case ETesteableExampleTests::TEST_HEALTH:
 		{
 			return Health != 0;
 		}
-		case ETestExampleTests::TEST_MOVEMENT:
+		case ETesteableExampleTests::TEST_MOVEMENT:
 		{
 			const int MaxSpeed = 10;
 			const bool bExceedMaxSpeed = Movement > MaxSpeed;
@@ -33,7 +33,7 @@ bool TestExample::RunTest(ETestExampleTests TestToRun)
 
 			return true;
 		}	
-		case ETestExampleTests::TEST_SCORE:
+		case ETesteableExampleTests::TEST_SCORE:
 		{
 			return Score == 500;
 		}

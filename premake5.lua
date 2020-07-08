@@ -1,6 +1,6 @@
 workspace "NetworkLibrary"
 	architecture "x64"
-	startproject "Chat"
+	startproject "Sandbox"
 	
 	configurations
 	{
@@ -16,7 +16,8 @@ project "NetworkLibrary"
 	language "C++"
 	links
 	{
-		"vendor/WS2/lib/**.lib"
+		"vendor/WS2/lib/**.lib",
+		"UtilsLibrary"
 	}
 	
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -32,7 +33,8 @@ project "NetworkLibrary"
 	includedirs
 	{
 		"vendor/WS2/include",
-		"vendor/glm"
+		"vendor/glm",
+		"UtilsLibrary/src"
 	}
 	
 	filter "system:windows"
@@ -71,13 +73,32 @@ project "Chat"
 		staticruntime "On"
 		systemversion "latest"
 		
-project "UnitTesting"
-	location "UnitTesting"
+		
+project "UtilsLibrary"
+	location "UtilsLibrary"
+	kind "StaticLib"
+	language "C++"
+	
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("intermediate/" .. outputdir .. "/%{prj.name}")
+	
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+	
+	filter "system:windows"
+		cppdialect "C++17"
+		staticruntime "On"
+		systemversion "latest"
+		
+project "Sandbox"
+	location "Sandbox"
 	kind "ConsoleApp"
 	language "C++"
 	links
 	{
-		"Chat",
 		"NetworkLibrary"
 	}
 	
@@ -93,8 +114,6 @@ project "UnitTesting"
 	includedirs
 	{
 		"NetworkLibrary/src",
-		"vendor/glm",
-		"Chat/src",
 	}
 	
 	filter "system:windows"

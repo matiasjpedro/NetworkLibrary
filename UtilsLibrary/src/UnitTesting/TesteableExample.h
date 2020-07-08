@@ -1,5 +1,5 @@
 #pragma once
-#include "UnitTestingTypes.h"
+#include "Testeable.h"
 
 #pragma region ITesteable
 #define CLASS_A_TESTS_ENUM(DO) \
@@ -8,10 +8,10 @@
     DO(TEST_MOVEMENT) \
 	DO(TEST_SCORE)
 
-MAKE_LOGGABLE_ENUM(CLASS_A_TESTS_ENUM, ETestExampleTests)
+MAKE_LOGGABLE_ENUM(CLASS_A_TESTS_ENUM, ETesteableExampleTests)
 #pragma endregion
 
-class TestExample : public ITesteable<ETestExampleTests>
+class TesteableExample : public ITesteable<ETesteableExampleTests>
 {
 private:
 
@@ -23,6 +23,6 @@ private:
 protected:
 
 	void MockDataForTests() override;
-	bool RunTest(ETestExampleTests TestToRun) override;
+	bool RunTest(ETesteableExampleTests TestToRun) override;
 
 };

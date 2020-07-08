@@ -1,9 +1,9 @@
 #pragma once
-#include "UnitTestingTypes.h"
-#include "Serialization/MemoryStream.h"
-#include "Serialization/INetSerializable.h"
-#include "Serialization/Compression.h"
-#include "Serialization/MemoryBitStream.h"
+#include "UnitTesting/Testeable.h"
+#include "../Serialization/MemoryStream.h"
+#include "../Serialization/INetSerializable.h"
+#include "../Serialization/Compression.h"
+#include "../Serialization/MemoryBitStream.h"
 #include "glm/vec3.hpp"
 #include "glm/ext/quaternion_float.hpp"
 
@@ -144,14 +144,13 @@ bool TestVector3()
 	glm::vec3 WriteVector3 = glm::vec3(5.f, 3.f, 5.f);
 	T WriteStream = T();
 
-	WriteStream.SerializeVector3(WriteVector3, EAxisToSkip::Z);
+	WriteStream.SerializeVector3(WriteVector3);
 
 	glm::vec3 ReadVector3;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
 	ReadStream.SerializeVector3(ReadVector3);
 
-	// As these are compressed I should allow the compression margin as true, I should override the operator
-	return WriteVector3.x == ReadVector3.x && WriteVector3.y == ReadVector3.y && ReadVector3.z == 0;
+	return WriteVector3.x == ReadVector3.x && WriteVector3.y == ReadVector3.y && ReadVector3.z == WriteVector3.z;
 }
 
 template<typename T>
@@ -236,7 +235,7 @@ class SerializationTests : public ITesteable<ESerializationTests>
 			break;
 		case ESerializationTests::TEST_SERIALIZE_QUATERNION:
 		{
-			return TestQuaternion<MemoryStream>() /*&& TestQuaternion<MemoryBitStream>()*/;
+			return TestQuaternion<MemoryStream>() && TestQuaternion<MemoryBitStream>();
 		}
 			break;
 		default:
