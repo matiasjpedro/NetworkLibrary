@@ -31,7 +31,7 @@ void DoUDPLoop()
 
 /*void ProcessNewClient(const TCPSocketPtr& SockPtr, const SocketAddress& SockAddr)
 {
-	std::cout << "New client!" << std::endl;
+	std::cout << "New client!" << '\n';
 
 }
 
@@ -41,7 +41,7 @@ void ProcessDataFromClient(const TCPSocketPtr& SockPtr, const char* Segment, int
 	MemoryStream Reader = MemoryStream(Segment, DataReceivedLenght);
 	Reader.SerializeString(Msg);
 
-	std::cout << "Data received: " << Msg << std::endl;
+	std::cout << "Data received: " << Msg << '\n';
 }
 
 void DoTCPLoop()
@@ -52,7 +52,7 @@ void DoTCPLoop()
 	std::vector<TCPSocketPtr> ReadBlockSockets;
 	std::vector<TCPSocketPtr> ReadableSockets;
 
-	std::cout << "Select Mode: [0] OnlyListen [1] OnlyConnect [2] Both" << std::endl;
+	std::cout << "Select Mode: [0] OnlyListen [1] OnlyConnect [2] Both" << '\n';
 
 	int Mode;
 	std::cin >> Mode;
@@ -83,7 +83,7 @@ void DoTCPLoop()
 		std::cout << "Enter HOST IP: ";
 		std::cin >> IpToConnect;
 
-		std::cout << IpToConnect << std::endl;
+		std::cout << IpToConnect << '\n';
 
 		if (!IpToConnect.empty())
 		{
@@ -96,7 +96,7 @@ void DoTCPLoop()
 
 	if (!SocketUtil::GetLastError().empty())
 	{
-		std::cout << SocketUtil::GetLastError() << std::endl;
+		std::cout << SocketUtil::GetLastError() << '\n';
 	}
 
 	std::cin.get();
@@ -113,7 +113,7 @@ void DoTCPLoop()
 				ProcessDataFromClient(ConnectionSocket, Segment, DataReceived);
 			}
 
-			std::cout << "Select Action: ProcessFrame [0] Chat [1]" << std::endl;
+			std::cout << "Select Action: ProcessFrame [0] Chat [1]" << '\n';
 
 			int Action;
 			std::cin >> Action;
@@ -122,14 +122,14 @@ void DoTCPLoop()
 			{
 				std::string Msg;
 				std::cin >> Msg;
-				std::cout << std::endl;
+				std::cout << '\n';
 
 				if (!Msg.empty())
 				{
 					MemoryStream Writer = MemoryStream();
 					Writer.SerializeString(Msg);
 
-					std::cout << "Sending: " << Msg << std::endl;
+					std::cout << "Sending: " << Msg << '\n';
 
 					// +1 because I want to send the null termination of the string.
 					ConnectionSocket->Send(Writer.GetBufferPtr(), Writer.GetLength());
@@ -137,7 +137,7 @@ void DoTCPLoop()
 			}
 		}
 
-		std::cout << "PROCESS FRAME" << std::endl;
+		std::cout << "PROCESS FRAME" << '\n';
 		
 		//[TODO] Another thread for select, remove 0 timeout.
 		if (SocketUtil::Select(&ReadBlockSockets, &ReadableSockets, nullptr, nullptr, nullptr, nullptr))

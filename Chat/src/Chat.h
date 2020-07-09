@@ -51,7 +51,7 @@ void GetMsg(std::string& OutMsg)
 
 void ProcessNewClient(const TCPSocketPtr& SockPtr, const SocketAddress& SockAddr)
 {
-	std::cout << "New client! IP:" << SockAddr.ToString() << std::endl;
+	std::cout << "New client! IP:" << SockAddr.ToString() << '\n';
 }
 
 void ProcessDataFromClient(const TCPSocketPtr& SockPtr, const char* Segment, int DataReceivedLenght)
@@ -60,7 +60,7 @@ void ProcessDataFromClient(const TCPSocketPtr& SockPtr, const char* Segment, int
 	MemoryStream Reader = MemoryStream(Segment, DataReceivedLenght);
 	Reader.SerializeString(Msg);
 
-	std::cout << Msg << std::endl;
+	std::cout << Msg << '\n';
 }
 
 TCPSocketPtr InitializeListenSocket()
@@ -84,8 +84,8 @@ TCPSocketPtr InitializeListenSocket()
 		}
 	}
 
-	std::cout << "Server initialized successfully" << std::endl;
-	std::cout << "Listening..." << std::endl;
+	std::cout << "Server initialized successfully" << '\n';
+	std::cout << "Listening..." << '\n';
 
 	return ListenSocket;
 }
@@ -102,18 +102,18 @@ TCPSocketPtr InitializeClientSocket(const SocketAddress& SocketAddr)
 
 		if (ClientSocket != nullptr)
 		{
-			std::cout << "Trying to connect to: " << SocketAddr.ToString() << std::endl;
+			std::cout << "Trying to connect to: " << SocketAddr.ToString() << '\n';
 			SocketResult = ClientSocket->Connect(SocketAddr);
 
 			if (SocketResult == SOCKET_ERROR)
 			{
 				int LastErrorCode = WSAGetLastError();
-				std::cout << "Unable to connect, error code: " << LastErrorCode << std::endl;
+				std::cout << "Unable to connect, error code: " << LastErrorCode << '\n';
 			}
 		}
 	}
 
-	std::cout << "Client initialized successfully" << std::endl;
+	std::cout << "Client initialized successfully" << '\n';
 
 	SocketUtil::SetNonBlockingMode(ClientSocket, true);
 
@@ -213,7 +213,7 @@ void ProcessP2PClient(TCPSocketPtr MatchmakingSocket)
 {
 	std::vector<TCPSocketPtr> OtherClientsConnections;
 
-	std::cout << "Waiting other players to join..." << std::endl;
+	std::cout << "Waiting other players to join..." << '\n';
 
 	while (true)
 	{
@@ -227,7 +227,7 @@ void ProcessP2PClient(TCPSocketPtr MatchmakingSocket)
 
 			Reader.SerializeString(OtherClientIP);
 
-			std::cout << "Client Join MM: " << OtherClientIP << std::endl;
+			std::cout << "Client Join MM: " << OtherClientIP << '\n';
 
 			TCPSocketPtr ClientSocket = InitializeClientSocket(SocketAddress(OtherClientIP));
 
@@ -264,7 +264,7 @@ void ProcessMatchmakingService(TCPSocketPtr ListenSocket)
 
 					std::string NewClientAddrStr = NewClientAddress.ToString();
 
-					std::cout << "New Client registered in the Matchmaking: " << NewClientAddrStr << std::endl;
+					std::cout << "New Client registered in the Matchmaking: " << NewClientAddrStr << '\n';
 
 					//Send the IP of the new client to all the clients connected
 					if (AllSockets.size() > 1)
@@ -294,7 +294,7 @@ void ProcessMatchmakingService(TCPSocketPtr ListenSocket)
 							MemoryStream Writer = MemoryStream();
 							Writer.SerializeString(NewClientAddrStr);
 
-							std::cout << "Send new client address to already connected client: " << NewClientAddrStr << std::endl;
+							std::cout << "Send new client address to already connected client: " << NewClientAddrStr << '\n';
 
 							SocketItem->Send(Writer.GetBufferPtr(), Writer.GetLength());
 						}
@@ -320,7 +320,7 @@ void ProcessMatchmakingService(TCPSocketPtr ListenSocket)
 						MemoryStream Writer = MemoryStream();
 						Writer.SerializeString(ClientAddrStr);
 
-						std::cout << "Send already connected client address to the new client: " << ClientAddrStr << std::endl;
+						std::cout << "Send already connected client address to the new client: " << ClientAddrStr << '\n';
 
 						NewSocket->Send(Writer.GetBufferPtr(), Writer.GetLength());
 					}
