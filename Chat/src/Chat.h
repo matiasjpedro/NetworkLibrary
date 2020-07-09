@@ -6,22 +6,18 @@
 #include "Sockets/SocketUtil.h"
 #include "Serialization/MemoryStream.h"
 #include <thread>
-#include <unordered_map>
 
 // -2 because those are reserved for the length.
-static const int MAX_CHAT_LENGTH = 255 - 2;
-const std::string MATCHMAKING_ADDRESS_STR = "190.191.234.248:27015";
+static constexpr int MAX_CHAT_LENGTH = 255 - 2;
+static constexpr int DEFAULT_PORT = 27015;
 
 enum EChatMode : int 
 {
 	ECM_DedicatedServer,
-	ECM_P2PClient,
-	ECM_MatchmakingService,
-	ECM_Client
-	/*
-	ECM_STUNServer,
 	ECM_ListenServer,
-	*/
+	ECM_Client,
+	ECM_P2PClient,
+	ECM_STUNService
 };
 
 std::string Nickname;
@@ -70,13 +66,8 @@ TCPSocketPtr InitializeListenSocket()
 
 	while (SocketResult != NO_ERROR)
 	{
-		std::cout << "Select listening port: ";
-
-		int ListeningPort;
-		std::cin >> ListeningPort;
-
 		ListenSocket = SocketUtil::CreateTCPSocket(INET);
-		SocketAddress ReceivingAddress(INADDR_ANY, ListeningPort);
+		SocketAddress ReceivingAddress(INADDR_ANY, DEFAULT_PORT);
 
 		if (ListenSocket != nullptr)
 		{
@@ -168,7 +159,7 @@ void ProcessServerChat(TCPSocketPtr ListenSocket)
 	}
 }
 
-void ProcessClientChat(std::vector<TCPSocketPtr> ClientSockets)
+void ProcessClientChat(std::vector<TCPSocketPtr>& ClientSockets, TCPSocketPtr ListenServerSocket)
 {
 	std::cout << "Enter your nickname: ";
 	std::cin >> Nickname;
@@ -178,13 +169,16 @@ void ProcessClientChat(std::vector<TCPSocketPtr> ClientSockets)
 
 	while (true)
 	{
-		for (const TCPSocketPtr& ClientSocket : ClientSockets)
+		if (!ListenServerSocket)
 		{
-			char Segment[MAX_CHAT_LENGTH];
-			int DataReceived = ClientSocket->Receive(Segment, MAX_CHAT_LENGTH);
-			if (DataReceived > 0)
+			for (const TCPSocketPtr& ClientSocket : ClientSockets)
 			{
-				ProcessDataFromClient(ClientSocket, Segment, DataReceived);
+				char Segment[MAX_CHAT_LENGTH];
+				int DataReceived = ClientSocket->Receive(Segment, MAX_CHAT_LENGTH);
+				if (DataReceived > 0)
+				{
+					ProcessDataFromClient(ClientSocket, Segment, DataReceived);
+				}
 			}
 		}
 
@@ -195,21 +189,81 @@ void ProcessClientChat(std::vector<TCPSocketPtr> ClientSockets)
 			Msg.append(": ");
 			Msg.append(ChatMsg);
 
-			MemoryStream Writer = MemoryStream();
-			Writer.SerializeString(Msg);
-
-			for (const TCPSocketPtr& ClientSocket : ClientSockets)
+			if (Msg.size() <= MAX_CHAT_LENGTH)
 			{
-				// +1 because I want to send the null termination of the string.
-				ClientSocket->Send(Writer.GetBufferPtr(), Writer.GetLength());
+				MemoryStream Writer = MemoryStream();
+				Writer.SerializeString(Msg);
+
+				for (const TCPSocketPtr& ClientSocket : ClientSockets)
+				{
+					if (ListenServerSocket && ListenServerSocket == ClientSocket)
+						continue;
+
+					ClientSocket->Send(Writer.GetBufferPtr(), Writer.GetLength());
+				}
 			}
-			
+
 			ChatMsg.clear();
 		}
 	}
 }
 
-void ProcessP2PClient(TCPSocketPtr MatchmakingSocket)
+void ProcessListenServer(TCPSocketPtr ListenSocket)
+{
+	std::vector<TCPSocketPtr> ReadBlockSockets;
+	std::vector<TCPSocketPtr> ReadableSockets;
+
+	ReadBlockSockets.push_back(ListenSocket);
+
+	auto SelectLambda = [&ReadBlockSockets, &ReadableSockets, &ListenSocket]()
+	{
+		while (true)
+		{
+			if (SocketUtil::Select(&ReadBlockSockets, &ReadableSockets, nullptr, nullptr, nullptr, nullptr))
+			{
+				for (const TCPSocketPtr& CurrentSocket : ReadableSockets)
+				{
+					if (ListenSocket != nullptr && CurrentSocket == ListenSocket)
+					{
+						//It's the listen socket, accept a new connection
+						SocketAddress NewClientAddress;
+						auto NewSocket = CurrentSocket->Accept(NewClientAddress);
+						ReadBlockSockets.push_back(NewSocket);
+						ProcessNewClient(NewSocket, NewClientAddress);
+					}
+					else
+					{
+						//It's a regular socket-process the data...
+						char Segment[MAX_CHAT_LENGTH];
+						int DataReceived = CurrentSocket->Receive(Segment, MAX_CHAT_LENGTH);
+						if (DataReceived > 0)
+						{
+							ProcessDataFromClient(CurrentSocket, Segment, DataReceived);
+
+							for (const TCPSocketPtr& SocketItem : ReadBlockSockets)
+							{
+								if (SocketItem == ListenSocket || SocketItem == CurrentSocket)
+								{
+									continue;
+								}
+
+								// Send chat to the other clients.
+								SocketItem->Send(Segment, DataReceived);
+							}
+						}
+
+					}
+				}
+			}
+		}
+	};
+
+	std::thread T1(SelectLambda);
+
+	ProcessClientChat(ReadBlockSockets, ListenSocket);
+}
+
+void ProcessP2PClient(TCPSocketPtr STUNSocket)
 {
 	std::vector<TCPSocketPtr> OtherClientsConnections;
 
@@ -219,7 +273,7 @@ void ProcessP2PClient(TCPSocketPtr MatchmakingSocket)
 	{
 		//255.255.255.255:65555 = 22 + 1(nulltermination) + 2(length of the string)
 		char Segment[25];
-		int DataReceived = MatchmakingSocket->Receive(Segment, 25);
+		int DataReceived = STUNSocket->Receive(Segment, 25);
 		if (DataReceived > 0)
 		{
 			std::string OtherClientIP;
@@ -236,12 +290,12 @@ void ProcessP2PClient(TCPSocketPtr MatchmakingSocket)
 
 		if (OtherClientsConnections.size() > 0)
 		{
-			ProcessClientChat(OtherClientsConnections);
+			ProcessClientChat(OtherClientsConnections, nullptr);
 		}
 	}
 }
 
-void ProcessMatchmakingService(TCPSocketPtr ListenSocket)
+void ProcessSTUNService(TCPSocketPtr ListenSocket)
 {
 	std::vector<TCPSocketPtr> AllSockets;
 	std::vector<TCPSocketPtr> SocketsWithChanges;
@@ -264,7 +318,7 @@ void ProcessMatchmakingService(TCPSocketPtr ListenSocket)
 
 					std::string NewClientAddrStr = NewClientAddress.ToString();
 
-					std::cout << "New Client registered in the Matchmaking: " << NewClientAddrStr << '\n';
+					std::cout << "New Client registered in the STUN: " << NewClientAddrStr << '\n';
 
 					//Send the IP of the new client to all the clients connected
 					if (AllSockets.size() > 1)
@@ -344,7 +398,7 @@ void DoTCPChat()
 		return;
 	}
 
-	std::cout << "Select Mode: [0] DedicatedServer [1] P2PClient [2] Matchmaking Service [3] Client:  ";
+	std::cout << "Select Mode: [0] DedicatedServer [1] ListenServer [2] Client [3] ClientP2P [4] STUNService:  ";
 
 	int Mode;
 	std::cin >> Mode;
@@ -361,32 +415,42 @@ void DoTCPChat()
 			ProcessServerChat(ListenSocket);	
 		}
 	}
-	else if (Mode == ECM_P2PClient)
-	{
-		std::string MatchmakingIp;
-		std::cout << "Enter Matchmaking Service IP: ";
-		std::cin >> MatchmakingIp;
-
-		TCPSocketPtr MatchmakingSocket = InitializeClientSocket(SocketAddress(MatchmakingIp));
-		if (MatchmakingSocket != nullptr)
-		{
-			ProcessP2PClient(MatchmakingSocket);
-		}
-	}
-	else if (Mode == ECM_MatchmakingService)
+	else if (Mode == ECM_ListenServer)
 	{
 		TCPSocketPtr ListenSocket = InitializeListenSocket();
 
 		if (ListenSocket != nullptr)
 		{
-			ProcessMatchmakingService(ListenSocket);
+			ProcessListenServer(ListenSocket);
+		}
+	}
+	else if (Mode == ECM_P2PClient)
+	{
+		std::string STUNIp;
+		std::cout << "P2P Connection would require an intermediary to establish the direct connection between clients." << '\n'; 
+		std::cout << "Enter STUN Service IP : ";
+		std::cin >> STUNIp;
+
+		TCPSocketPtr STUNSocket = InitializeClientSocket(SocketAddress(STUNIp));
+		if (STUNSocket != nullptr)
+		{
+			ProcessP2PClient(STUNSocket);
+		}
+	}
+	else if (Mode == ECM_STUNService)
+	{
+		TCPSocketPtr ListenSocket = InitializeListenSocket();
+
+		if (ListenSocket != nullptr)
+		{
+			ProcessSTUNService(ListenSocket);
 		}
 	}
 	else if (Mode == ECM_Client)
 	{
 		std::string IpToConnect;
 
-		std::cout << "Enter Dedicated Server IP: ";
+		std::cout << "Enter Dedicated/Listen Server IP: ";
 		std::cin >> IpToConnect;
 
 		TCPSocketPtr ClientSocket = InitializeClientSocket(SocketAddress(IpToConnect));
@@ -395,7 +459,7 @@ void DoTCPChat()
 		{
 			std::vector<TCPSocketPtr> ClientSockets;
 			ClientSockets.push_back(ClientSocket);
-			ProcessClientChat(ClientSockets);
+			ProcessClientChat(ClientSockets, nullptr);
 		}
 	}
 
