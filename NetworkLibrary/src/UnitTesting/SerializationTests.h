@@ -1,8 +1,7 @@
 #pragma once
 #include "UnitTesting/Testeable.h"
 #include "../Serialization/MemoryStream.h"
-#include "../Serialization/ICustomSerializable.h"
-#include "../Serialization/Reflection/Reflection.h"
+#include "../Serialization/ISerializableObject.h"
 #include "../Serialization/Compression.h"
 #include "../Serialization/MemoryBitStream.h"
 #include "glm/vec3.hpp"
@@ -14,9 +13,8 @@
     DO(TEST_SERIALIZE_PRIMITIVE_VECTOR) \
 	DO(TEST_SERIALIZE_STRING) \
     DO(TEST_SERIALIZE_STRING_VECTOR) \
-	DO(TEST_SERIALIZE_CUSTOMSERIALIZABLE) \
-	DO(TEST_SERIALIZE_CUSTOMSERIALIZABLE_VECTOR) \
-	DO(TEST_SERIALIZE_GENERICSERIALIZABLE) \
+	DO(TEST_SERIALIZE_SERIALIZABLEOBJECT) \
+	DO(TEST_SERIALIZE_SERIALIZABLEOBJECT_VECTOR) \
 	DO(TEST_SERIALIZE_VECTOR3) \
 	DO(TEST_SERIALIZE_QUATERNION) 
 
@@ -24,14 +22,19 @@
 MAKE_LOGGABLE_ENUM(SERIALIZATION_TESTS_ENUM, ESerializationTests)
 #pragma endregion
 
-class CustomSerializableObject : public ICustomSerializable
+class SerializableObject : public ISerializableObject
 {
 
 public:
 
 	uint32_t Health;
 
-	CustomSerializableObject() :
+	SerializableObject()
+	{
+
+	}
+
+	SerializableObject(int InHealth) :
 		Health(5)
 	{
 
@@ -42,31 +45,6 @@ public:
 		Stream->SerializePrim(Health);
 	}
 };
-
-// This could be code generated adding some tags in the class that I want to serialize
-class GenericSerializableObject
-{
-public:
-	//std::string mName;
-	int mSomeCount;
-	float mHealth;
-	bool mIsAlive;
-
-	static DataType* sDataType;
-
-	static void InitDataType()
-	{
-		sDataType = new DataType(
-			{
-				/*MemberVariable("mName", EPT_String, OffsetOf(GenericSerializableObject, mName)),*/
-				MemberVariable("mSomeCount", EPT_Int, OffsetOf(GenericSerializableObject, mSomeCount)),
-				MemberVariable("mHealth", EPT_Float, OffsetOf(GenericSerializableObject, mHealth)),
-				MemberVariable("mIsAlive", EPT_Bool, OffsetOf(GenericSerializableObject, mIsAlive))
-			});
-	}
-};
-
-DataType* GenericSerializableObject::sDataType;
 
 template<typename T>
 bool TestPrimitive()
@@ -88,9 +66,7 @@ bool TestPrimitive()
 template<typename T>
 bool TestPrimitiveVector()
 {
-	std::vector<uint32_t> WriteVector;
-	WriteVector.push_back(13);
-	WriteVector.push_back(13);
+	std::vector<uint32_t> WriteVector = { 13, 12 };
 
 	T WriteStream = T();
 	WriteStream.SerializePrimArr(WriteVector, 2);
@@ -120,9 +96,7 @@ bool TestString()
 template<typename T>
 bool TestStringVector()
 {
-	std::vector<std::string> WriteVector;
-	WriteVector.push_back(std::string("Test1"));
-	WriteVector.push_back(std::string("Test2"));
+	std::vector<std::string> WriteVector = { std::string("Test1"),  std::string("Test2") };
 
 	T WriteStream = T();
 	WriteStream.SerializeStringArr(WriteVector);
@@ -135,60 +109,33 @@ bool TestStringVector()
 }
 
 template<typename T>
-bool TestCustomSerializable()
+bool TestSerializableObject()
 {
-	CustomSerializableObject WriteSerializableActor;
+	SerializableObject WriteObj = SerializableObject(8);
+
 	T WriteStream = T();
-	WriteStream.SerializeCustom(WriteSerializableActor);
+	WriteStream.SerializeObject(WriteObj);
 
-	CustomSerializableObject ReadSerializableActor;
+	SerializableObject ReadObj;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeCustom(ReadSerializableActor);
+	ReadStream.SerializeObject(ReadObj);
 
-	return WriteSerializableActor.Health == ReadSerializableActor.Health;
+	return WriteObj.Health == ReadObj.Health;
 }
 
 template<typename T>
-bool TestCustomSerializableVector()
+bool TestSerializableObjectVector()
 {
-	std::vector<CustomSerializableObject> WriteVector;
-	WriteVector.push_back(CustomSerializableObject());
-	WriteVector.push_back(CustomSerializableObject());
+	std::vector<SerializableObject> WriteVector{ SerializableObject(5) , SerializableObject(3) };
 
 	T WriteStream = T();
-	WriteStream.SerializeCustomArr(WriteVector);
+	WriteStream.SerializeObjectArr(WriteVector);
 
-	std::vector<CustomSerializableObject> ReadVector;
+	std::vector<SerializableObject> ReadVector;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeCustomArr(ReadVector);
+	ReadStream.SerializeObjectArr(ReadVector);
 
 	return ReadVector[0].Health == WriteVector[0].Health && ReadVector[1].Health == WriteVector[1].Health;
-}
-
-template<typename T>
-bool TestGenericSerializable()
-{
-	GenericSerializableObject WriteObj;
-
-	if (WriteObj.sDataType == nullptr)
-	{
-		WriteObj.InitDataType();
-	}
-
-	WriteObj.mHealth = 10.f;
-	WriteObj.mIsAlive = true;
-	WriteObj.mSomeCount = 3;
-
-	T WriteStream = T();
-	WriteStream.SerializeGeneric(WriteObj.sDataType, (uint8_t*)&WriteObj);
-
-	GenericSerializableObject ReadObj;
-	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeGeneric(ReadObj.sDataType, (uint8_t*)&ReadObj);
-
-	return WriteObj.mHealth == ReadObj.mHealth
-		&& WriteObj.mIsAlive == ReadObj.mIsAlive
-		&& WriteObj.mSomeCount == ReadObj.mSomeCount;
 }
 
 template<typename T>
@@ -271,19 +218,14 @@ class SerializationTests : public ITesteable<ESerializationTests>
 			return TestStringVector<MemoryStream>() && TestStringVector<MemoryBitStream>();
 		}
 			break;
-		case ESerializationTests::TEST_SERIALIZE_CUSTOMSERIALIZABLE:
+		case ESerializationTests::TEST_SERIALIZE_SERIALIZABLEOBJECT:
 		{
-			return TestCustomSerializable<MemoryStream>() && TestCustomSerializable<MemoryBitStream>();
+			return TestSerializableObject<MemoryStream>() && TestSerializableObject<MemoryBitStream>();
 		}
 			break;
-		case ESerializationTests::TEST_SERIALIZE_CUSTOMSERIALIZABLE_VECTOR:
+		case ESerializationTests::TEST_SERIALIZE_SERIALIZABLEOBJECT_VECTOR:
 		{
-			return TestCustomSerializableVector<MemoryStream>() && TestCustomSerializableVector<MemoryBitStream>();
-		}
-			break;
-		case ESerializationTests::TEST_SERIALIZE_GENERICSERIALIZABLE:
-		{
-			return TestGenericSerializable<MemoryStream>() && TestGenericSerializable<MemoryBitStream>();
+			return TestSerializableObjectVector<MemoryStream>() && TestSerializableObjectVector<MemoryBitStream>();
 		}
 			break;
 		case ESerializationTests::TEST_SERIALIZE_VECTOR3:

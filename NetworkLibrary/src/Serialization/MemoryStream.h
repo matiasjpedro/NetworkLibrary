@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <cstdlib>
 #include <vector>
-#include "ICustomSerializable.h"
+#include "ISerializableObject.h"
 #include "ByteSwapper.h"
 #include <string>
 #include "glm/fwd.hpp"
@@ -56,9 +56,9 @@ public:
 	void SerializePrimArr(std::vector<T>& Vector, size_t InBytePerElement = sizeof(T));
 	
 	//Specializations.
-	void SerializeCustom(class ICustomSerializable& CustomSerializable);
+	void SerializeObject(class ISerializableObject& SerializableObject);
 	template<typename T>
-	void SerializeCustomArr(std::vector<T>& Vector);
+	void SerializeObjectArr(std::vector<T>& Vector);
 
 	void SerializeString(std::string& String);
 	void SerializeStringArr(std::vector<std::string>& Vector);
@@ -66,8 +66,6 @@ public:
 	void SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip = 0);
 	void SerializeQuaternion(glm::quat& InQuaternion);
 	
-	void SerializeGeneric(const class DataType* ClassType, uint8_t* InData);
-
 	//Helpers
 	const char* GetBufferPtr() const { return mBuffer; }
 	uint32_t GetLength() const { return mHead; }
@@ -139,7 +137,7 @@ void MemoryStream::SerializePrimArr(std::vector<T>& Vector, size_t InBytePerElem
 }
 
 template<typename T>
-void MemoryStream::SerializeCustomArr(std::vector<T>& Vector)
+void MemoryStream::SerializeObjectArr(std::vector<T>& Vector)
 {
 	size_t ElementCount = 0;
 
@@ -157,7 +155,7 @@ void MemoryStream::SerializeCustomArr(std::vector<T>& Vector)
 
 	for (const T& Element : Vector)
 	{
-		SerializeCustom((ICustomSerializable&)Element);	
+		SerializeObject((ISerializableObject&)Element);	
 	}
 }
 
