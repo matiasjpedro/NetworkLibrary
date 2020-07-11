@@ -1,9 +1,10 @@
 #include "MemoryStream.h"
-#include "INetSerializable.h"
+#include "ICustomSerializable.h"
 #include <algorithm>
 #include "Compression.h"
 #include "glm/vec3.hpp"
 #include "glm/ext/quaternion_float.hpp"
+#include "Reflection/Reflection.h"
 
 void MemoryStream::SerializeRAW(void* Data, size_t InByteCount)
 {
@@ -75,9 +76,9 @@ void MemoryStream::SerializeStringArr(std::vector<std::string>& Vector)
 	}
 }
 
-void MemoryStream::SerializeNet(INetSerializable& NetSerializable)
+void MemoryStream::SerializeCustom(ICustomSerializable& CustomSerializable)
 {
-	NetSerializable.Serialize(this);
+	CustomSerializable.Serialize(this);
 }
 
 void MemoryStream::SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip)
@@ -206,6 +207,30 @@ void MemoryStream::SerializeQuaternion(glm::quat& InQuaternion)
 
 		bIsNegative = InQuaternion.w < 0;
 		SerializePrim(bIsNegative, 1);
+	}
+}
+
+void MemoryStream::SerializeGeneric(const DataType* ClassType, uint8_t* InData)
+{
+	for (const auto& mv : ClassType->GetMemberVariables())
+	{
+		void* mvLocation = InData + mv.GetOffset();
+
+		switch (mv.GetPrimitiveType())
+		{
+		case EPT_Int:
+			SerializePrim(*reinterpret_cast<int*>(mvLocation));
+			break;
+		case EPT_String:
+			SerializeString(*reinterpret_cast<std::string*>(mvLocation));
+			break;
+		case EPT_Float:
+			SerializePrim(*reinterpret_cast<float*>(mvLocation));
+			break;
+		case EPT_Bool:
+			SerializeBool(*reinterpret_cast<bool*>(mvLocation));
+			break;
+		}
 	}
 }
 

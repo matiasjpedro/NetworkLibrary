@@ -1,7 +1,8 @@
 #pragma once
 #include "UnitTesting/Testeable.h"
 #include "../Serialization/MemoryStream.h"
-#include "../Serialization/INetSerializable.h"
+#include "../Serialization/ICustomSerializable.h"
+#include "../Serialization/Reflection/Reflection.h"
 #include "../Serialization/Compression.h"
 #include "../Serialization/MemoryBitStream.h"
 #include "glm/vec3.hpp"
@@ -13,23 +14,24 @@
     DO(TEST_SERIALIZE_PRIMITIVE_VECTOR) \
 	DO(TEST_SERIALIZE_STRING) \
     DO(TEST_SERIALIZE_STRING_VECTOR) \
-	DO(TEST_SERIALIZE_NETSERIALIZABLE) \
-	DO(TEST_SERIALIZE_NETSERIALIZABLE_VECTOR) \
+	DO(TEST_SERIALIZE_CUSTOMSERIALIZABLE) \
+	DO(TEST_SERIALIZE_CUSTOMSERIALIZABLE_VECTOR) \
+	DO(TEST_SERIALIZE_GENERICSERIALIZABLE) \
 	DO(TEST_SERIALIZE_VECTOR3) \
-	DO(TEST_SERIALIZE_QUATERNION)
+	DO(TEST_SERIALIZE_QUATERNION) 
 
 
 MAKE_LOGGABLE_ENUM(SERIALIZATION_TESTS_ENUM, ESerializationTests)
 #pragma endregion
 
-class SerializableTestActor : public INetSerializable
+class CustomSerializableObject : public ICustomSerializable
 {
 
 public:
 
 	uint32_t Health;
 
-	SerializableTestActor() :
+	CustomSerializableObject() :
 		Health(5)
 	{
 
@@ -40,6 +42,31 @@ public:
 		Stream->SerializePrim(Health);
 	}
 };
+
+// This could be code generated adding some tags in the class that I want to serialize
+class GenericSerializableObject
+{
+public:
+	//std::string mName;
+	int mSomeCount;
+	float mHealth;
+	bool mIsAlive;
+
+	static DataType* sDataType;
+
+	static void InitDataType()
+	{
+		sDataType = new DataType(
+			{
+				/*MemberVariable("mName", EPT_String, OffsetOf(GenericSerializableObject, mName)),*/
+				MemberVariable("mSomeCount", EPT_Int, OffsetOf(GenericSerializableObject, mSomeCount)),
+				MemberVariable("mHealth", EPT_Float, OffsetOf(GenericSerializableObject, mHealth)),
+				MemberVariable("mIsAlive", EPT_Bool, OffsetOf(GenericSerializableObject, mIsAlive))
+			});
+	}
+};
+
+DataType* GenericSerializableObject::sDataType;
 
 template<typename T>
 bool TestPrimitive()
@@ -108,34 +135,60 @@ bool TestStringVector()
 }
 
 template<typename T>
-bool TestNetSerializable()
+bool TestCustomSerializable()
 {
-	SerializableTestActor WriteSerializableActor;
+	CustomSerializableObject WriteSerializableActor;
 	T WriteStream = T();
-	WriteStream.SerializeNet(WriteSerializableActor);
+	WriteStream.SerializeCustom(WriteSerializableActor);
 
-	SerializableTestActor ReadSerializableActor;
+	CustomSerializableObject ReadSerializableActor;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeNet(ReadSerializableActor);
+	ReadStream.SerializeCustom(ReadSerializableActor);
 
 	return WriteSerializableActor.Health == ReadSerializableActor.Health;
 }
 
 template<typename T>
-bool TestNetSerializableVector()
+bool TestCustomSerializableVector()
 {
-	std::vector<SerializableTestActor> WriteVector;
-	WriteVector.push_back(SerializableTestActor());
-	WriteVector.push_back(SerializableTestActor());
+	std::vector<CustomSerializableObject> WriteVector;
+	WriteVector.push_back(CustomSerializableObject());
+	WriteVector.push_back(CustomSerializableObject());
 
 	T WriteStream = T();
-	WriteStream.SerializeNetArr(WriteVector);
+	WriteStream.SerializeCustomArr(WriteVector);
 
-	std::vector<SerializableTestActor> ReadVector;
+	std::vector<CustomSerializableObject> ReadVector;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeNetArr(ReadVector);
+	ReadStream.SerializeCustomArr(ReadVector);
 
 	return ReadVector[0].Health == WriteVector[0].Health && ReadVector[1].Health == WriteVector[1].Health;
+}
+
+template<typename T>
+bool TestGenericSerializable()
+{
+	GenericSerializableObject WriteObj;
+
+	if (WriteObj.sDataType == nullptr)
+	{
+		WriteObj.InitDataType();
+	}
+
+	WriteObj.mHealth = 10.f;
+	WriteObj.mIsAlive = true;
+	WriteObj.mSomeCount = 3;
+
+	T WriteStream = T();
+	WriteStream.SerializeGeneric(WriteObj.sDataType, (uint8_t*)&WriteObj);
+
+	GenericSerializableObject ReadObj;
+	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
+	ReadStream.SerializeGeneric(ReadObj.sDataType, (uint8_t*)&ReadObj);
+
+	return WriteObj.mHealth == ReadObj.mHealth
+		&& WriteObj.mIsAlive == ReadObj.mIsAlive
+		&& WriteObj.mSomeCount == ReadObj.mSomeCount;
 }
 
 template<typename T>
@@ -218,14 +271,19 @@ class SerializationTests : public ITesteable<ESerializationTests>
 			return TestStringVector<MemoryStream>() && TestStringVector<MemoryBitStream>();
 		}
 			break;
-		case ESerializationTests::TEST_SERIALIZE_NETSERIALIZABLE:
+		case ESerializationTests::TEST_SERIALIZE_CUSTOMSERIALIZABLE:
 		{
-			return TestNetSerializable<MemoryStream>() && TestNetSerializable<MemoryBitStream>();
+			return TestCustomSerializable<MemoryStream>() && TestCustomSerializable<MemoryBitStream>();
 		}
 			break;
-		case ESerializationTests::TEST_SERIALIZE_NETSERIALIZABLE_VECTOR:
+		case ESerializationTests::TEST_SERIALIZE_CUSTOMSERIALIZABLE_VECTOR:
 		{
-			return TestNetSerializableVector<MemoryStream>() && TestNetSerializableVector<MemoryBitStream>();
+			return TestCustomSerializableVector<MemoryStream>() && TestCustomSerializableVector<MemoryBitStream>();
+		}
+			break;
+		case ESerializationTests::TEST_SERIALIZE_GENERICSERIALIZABLE:
+		{
+			return TestGenericSerializable<MemoryStream>() && TestGenericSerializable<MemoryBitStream>();
 		}
 			break;
 		case ESerializationTests::TEST_SERIALIZE_VECTOR3:

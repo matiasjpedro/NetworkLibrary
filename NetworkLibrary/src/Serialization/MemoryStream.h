@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <cstdlib>
 #include <vector>
-#include "INetSerializable.h"
+#include "ICustomSerializable.h"
 #include "ByteSwapper.h"
 #include <string>
 #include "glm/fwd.hpp"
@@ -47,6 +47,7 @@ public:
 
 	//RAW
 	virtual void SerializeRAW(void* Data, size_t InByteCount);
+	virtual void SerializeBool(bool& Value);
 
 	//Primitives
 	template<typename T>
@@ -55,17 +56,17 @@ public:
 	void SerializePrimArr(std::vector<T>& Vector, size_t InBytePerElement = sizeof(T));
 	
 	//Specializations.
-	void SerializeNet(class INetSerializable& NetSerializable);
+	void SerializeCustom(class ICustomSerializable& CustomSerializable);
 	template<typename T>
-	void SerializeNetArr(std::vector<T>& Vector);
+	void SerializeCustomArr(std::vector<T>& Vector);
 
 	void SerializeString(std::string& String);
 	void SerializeStringArr(std::vector<std::string>& Vector);
 
-	virtual void SerializeBool(bool& Value);
-
 	void SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip = 0);
 	void SerializeQuaternion(glm::quat& InQuaternion);
+	
+	void SerializeGeneric(const class DataType* ClassType, uint8_t* InData);
 
 	//Helpers
 	const char* GetBufferPtr() const { return mBuffer; }
@@ -138,7 +139,7 @@ void MemoryStream::SerializePrimArr(std::vector<T>& Vector, size_t InBytePerElem
 }
 
 template<typename T>
-void MemoryStream::SerializeNetArr(std::vector<T>& Vector)
+void MemoryStream::SerializeCustomArr(std::vector<T>& Vector)
 {
 	size_t ElementCount = 0;
 
@@ -156,7 +157,7 @@ void MemoryStream::SerializeNetArr(std::vector<T>& Vector)
 
 	for (const T& Element : Vector)
 	{
-		SerializeNet((INetSerializable&)Element);	
+		SerializeCustom((ICustomSerializable&)Element);	
 	}
 }
 

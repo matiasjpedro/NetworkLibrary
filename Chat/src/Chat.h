@@ -22,29 +22,6 @@ enum EChatMode : int
 
 std::string Nickname;
 
-static std::string GetInput()
-{
-	std::cout << "Chat: ";
-
-	std::string Input;
-	std::cin >> Input;
-	return Input;
-}
-
-void GetMsg(std::string& OutMsg)
-{
-	while (true)
-	{
-		std::string tmp;
-		std::getline(std::cin, tmp);
-
-		if (OutMsg.empty())
-		{
-			OutMsg = tmp;
-		}
-	}
-}
-
 void ProcessNewClient(const TCPSocketPtr& SockPtr, const SocketAddress& SockAddr)
 {
 	std::cout << "New client! IP:" << SockAddr.ToString() << '\n';
@@ -165,7 +142,22 @@ void ProcessClientChat(std::vector<TCPSocketPtr>& ClientSockets, TCPSocketPtr Li
 	std::cin >> Nickname;
 
 	std::string ChatMsg;
-	std::thread T1(GetMsg, std::ref(ChatMsg));
+
+	auto GetMsgLambda = [&ChatMsg]()
+	{
+		while (true)
+		{
+			std::string tmp;
+			std::getline(std::cin, tmp);
+
+			if (ChatMsg.empty())
+			{
+				ChatMsg = tmp;
+			}
+		}
+	};
+
+	std::thread T1(GetMsgLambda);
 
 	while (true)
 	{

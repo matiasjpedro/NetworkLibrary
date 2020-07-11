@@ -1,6 +1,6 @@
 #pragma once
 
-class INetSerializable
+class ICustomSerializable
 {
 public:
 
