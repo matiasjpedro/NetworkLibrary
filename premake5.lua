@@ -63,7 +63,7 @@ project "Sandbox"
 	{
 		"src/",
 		"vendor/UtilsLibrary/src/"
-	}
+	}	
 	
 	filter "system:windows"
 		cppdialect "C++17"
