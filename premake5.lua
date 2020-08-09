@@ -11,59 +11,27 @@ workspace "NetworkLibrary"
 outputdir= "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 	
 project "NetworkLibrary"
-	location "NetworkLibrary"
 	kind "StaticLib"
 	language "C++"
 	links
 	{
 		"vendor/WS2/lib/**.lib",
-		("vendor/UtilsLibrary/bin/" .. outputdir .. "/**.lib" )
+		"vendor/UtilsLibrary/bin/" .. outputdir .. "/**.lib"
 	}
 	
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("intermediate/" .. outputdir .. "/%{prj.name}")
+	targetdir ("bin/" .. outputdir)
+	objdir ("intermediate/" .. outputdir)
 	
 	files
 	{
-		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp",
+		"src/**.h",
+		"src/**.cpp",
 	}
 	
 	includedirs
 	{
 		"vendor/WS2/include",
-		"vendor/UtilsLibrary/UtilsLibrary/src/"
-	}
-	
-	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "On"
-		systemversion "latest"
-		
-project "Chat"
-	location "Chat"
-	kind "ConsoleApp"
-	language "C++"
-	links
-	{
-		"vendor/WS2/lib/**.lib",
-		"NetworkLibrary"
-	}
-	
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("intermediate/" .. outputdir .. "/%{prj.name}")
-	
-	files
-	{
-		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
-	}
-	
-	includedirs
-	{
-		"NetworkLibrary/src",
-		"vendor/UtilsLibrary/src/**.h",
-		"vendor/WS2/include"
+		"vendor/UtilsLibrary/src/"
 	}
 	
 	filter "system:windows"
@@ -80,18 +48,21 @@ project "Sandbox"
 		"NetworkLibrary"
 	}
 	
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("intermediate/" .. outputdir .. "/%{prj.name}")
+	targetdir ("%{prj.name}/bin/" .. outputdir)
+	objdir ("%{prj.name}/intermediate/" .. outputdir)
 	
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"src/**.h",
+		"src/**.cpp"
 	}
 	
 	includedirs
 	{
-		"NetworkLibrary/src",
+		"src/",
+		"vendor/UtilsLibrary/src/"
 	}
 	
 	filter "system:windows"

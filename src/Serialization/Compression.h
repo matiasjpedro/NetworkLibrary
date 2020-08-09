@@ -2,15 +2,6 @@
 #include <stdint.h>
 #include "MemoryStream.h"
 
-
-enum EAxisToSkip : uint8_t
-{
-	X = 1,
-	Y = 2,
-	Z = 4,
-	W = 8
-};
-
 inline uint8_t GetMaxLenghtGivenFixedPoint(float InMax, float InMin, float InPrecision, bool bWantBits = false)
 {
 	// There is not point for this method as the result will be static but for the sake of knowledge
