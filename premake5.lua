@@ -17,7 +17,7 @@ project "NetworkLibrary"
 	links
 	{
 		"vendor/WS2/lib/**.lib",
-		"UtilsLibrary"
+		("vendor/UtilsLibrary/bin/" .. outputdir .. "/**.lib" )
 	}
 	
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
@@ -27,14 +27,12 @@ project "NetworkLibrary"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
-		"vendor/glm/glm/fwd.hpp"
 	}
 	
 	includedirs
 	{
 		"vendor/WS2/include",
-		"vendor/glm",
-		"UtilsLibrary/src"
+		"vendor/UtilsLibrary/UtilsLibrary/src/"
 	}
 	
 	filter "system:windows"
@@ -64,28 +62,8 @@ project "Chat"
 	includedirs
 	{
 		"NetworkLibrary/src",
-		"vendor/glm",
+		"vendor/UtilsLibrary/src/**.h",
 		"vendor/WS2/include"
-	}
-	
-	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "On"
-		systemversion "latest"
-		
-		
-project "UtilsLibrary"
-	location "UtilsLibrary"
-	kind "StaticLib"
-	language "C++"
-	
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("intermediate/" .. outputdir .. "/%{prj.name}")
-	
-	files
-	{
-		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
 	}
 	
 	filter "system:windows"

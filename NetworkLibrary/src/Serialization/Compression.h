@@ -11,11 +11,6 @@ enum EAxisToSkip : uint8_t
 	W = 8
 };
 
-inline bool HasFlag(const uint8_t& Container, const EAxisToSkip& Query)
-{
-	return (Container & Query) != 0;
-}
-
 inline uint8_t GetMaxLenghtGivenFixedPoint(float InMax, float InMin, float InPrecision, bool bWantBits = false)
 {
 	// There is not point for this method as the result will be static but for the sake of knowledge

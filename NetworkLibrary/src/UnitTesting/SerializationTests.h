@@ -4,8 +4,7 @@
 #include "../Serialization/ISerializableObject.h"
 #include "../Serialization/Compression.h"
 #include "../Serialization/MemoryBitStream.h"
-#include "glm/vec3.hpp"
-#include "glm/ext/quaternion_float.hpp"
+#include "Math/Trigonometry.h"
 
 #pragma region ITesteable
 #define SERIALIZATION_TESTS_ENUM(DO) \
@@ -141,50 +140,50 @@ bool TestSerializableObjectVector()
 template<typename T>
 bool TestVector3()
 {
-	glm::vec3 WriteVector3 = glm::vec3(5.f, 3.f, 5.f);
+	Vector3 WriteVector3 = Vector3(5.f, 3.f, 5.f);
 	T WriteStream = T();
 
 	WriteStream.SerializeVector3(WriteVector3);
 
-	glm::vec3 ReadVector3;
+	Vector3 ReadVector3;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
 	ReadStream.SerializeVector3(ReadVector3);
 
-	return WriteVector3.x == ReadVector3.x && WriteVector3.y == ReadVector3.y && ReadVector3.z == WriteVector3.z;
+	return WriteVector3.mX == ReadVector3.mX && WriteVector3.mY == ReadVector3.mY && ReadVector3.mZ == WriteVector3.mZ;
 }
 
 template<typename T>
 bool TestQuaternion()
 {
-	glm::quat WriteQuat = glm::quat(-0.890f, 0.001f, 0.432f, -0.144f);
+	Quaternion WriteQuat = Quaternion(-0.890f, 0.001f, 0.432f, -0.144f);
 	T WriteStream = T();
 
 	WriteStream.SerializeQuaternion(WriteQuat);
 
-	glm::quat ReadQuat;
+	Quaternion ReadQuat;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
 	ReadStream.SerializeQuaternion(ReadQuat);
 	
 	constexpr float Precision = 0.01f;
 
-	if (glm::abs(WriteQuat.x - ReadQuat.x) > Precision)
+	if (std::abs(WriteQuat.mX - ReadQuat.mX) > Precision)
 	{
-		LastErrorStr = printf("X Axis fail: Original %f Result %f", WriteQuat.x, ReadQuat.x);
+		LastErrorStr = printf("X Axis fail: Original %f Result %f", WriteQuat.mX, ReadQuat.mX);
 		return false;
 	}
-	else if (glm::abs(WriteQuat.y - ReadQuat.y) > Precision)
+	else if (std::abs(WriteQuat.mY - ReadQuat.mY) > Precision)
 	{
-		LastErrorStr = printf("Y Axis fail: Original %f Result %f", WriteQuat.y, ReadQuat.y);
+		LastErrorStr = printf("Y Axis fail: Original %f Result %f", WriteQuat.mY, ReadQuat.mY);
 		return false;
 	}
-	else if (glm::abs(WriteQuat.z - ReadQuat.z) > Precision)
+	else if (std::abs(WriteQuat.mZ - ReadQuat.mZ) > Precision)
 	{
-		LastErrorStr = printf("Z Axis fail: Original %f Result %f", WriteQuat.z, ReadQuat.z);
+		LastErrorStr = printf("Z Axis fail: Original %f Result %f", WriteQuat.mZ, ReadQuat.mZ);
 		return false;
 	}
-	else if (glm::abs(WriteQuat.w - ReadQuat.w) > Precision)
+	else if (std::abs(WriteQuat.mW - ReadQuat.mW) > Precision)
 	{
-		LastErrorStr = printf("W Axis fail: Original %f Result %f", WriteQuat.w, ReadQuat.w);
+		LastErrorStr = printf("W Axis fail: Original %f Result %f", WriteQuat.mW, ReadQuat.mW);
 		return false;
 	}
 

@@ -2,8 +2,7 @@
 #include "ISerializableObject.h"
 #include <algorithm>
 #include "Compression.h"
-#include "glm/vec3.hpp"
-#include "glm/ext/quaternion_float.hpp"
+#include "Math/Trigonometry.h"
 
 void MemoryStream::SerializeRAW(void* Data, size_t InByteCount)
 {
@@ -80,7 +79,7 @@ void MemoryStream::SerializeObject(ISerializableObject& SerializableObject)
 	SerializableObject.Serialize(this);
 }
 
-void MemoryStream::SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip)
+void MemoryStream::SerializeVector3(Vector3& InVector3)
 {
 	// Suppose this is our world bounds
 	constexpr int WorldHalfBounds = 4000 / 2;
@@ -94,71 +93,34 @@ void MemoryStream::SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip)
 
 	if (bIsReading)
 	{
-		//SerializePrim(AxisToSkip);
-		bool AxisSkipped = false;
-		SerializeBool(AxisSkipped);
+		SerializePrim(FixedValue, LenghtPerComp);
+		InVector3.mX = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);		
 
-		if (!AxisSkipped)
-		{
-			SerializePrim(FixedValue, LenghtPerComp);
-			InVector3.x = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);
-		}
-
-		SerializeBool(AxisSkipped);
-
-		if (!AxisSkipped)
-		{
-			FixedValue = 0;
-			SerializePrim(FixedValue, LenghtPerComp);
-			InVector3.y = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);
-		}
-
-		SerializeBool(AxisSkipped);
-
-		if (!AxisSkipped)
-		{
-			FixedValue = 0;
-			SerializePrim(FixedValue, LenghtPerComp);
-			InVector3.z = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);
-		}
-		else
-		{
-			InVector3.z = 0;
-		}
+		FixedValue = 0;
+		SerializePrim(FixedValue, LenghtPerComp);
+		InVector3.mY = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);
+		
+		FixedValue = 0;
+		SerializePrim(FixedValue, LenghtPerComp);
+		InVector3.mZ = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);
 	}
 	else
 	{
-		bool AxisSkipped = HasFlag(AxisToSkip, EAxisToSkip::X);
-		SerializeBool(AxisSkipped);
+		
+		FixedValue = ConvertToFixed(InVector3.mX, -WorldHalfBounds, ClientRequiredPrecision);
+		SerializePrim(FixedValue, LenghtPerComp);
+		
+		FixedValue = ConvertToFixed(InVector3.mY, -WorldHalfBounds, ClientRequiredPrecision);
+		SerializePrim(FixedValue, LenghtPerComp);
 
-		if (!AxisSkipped)
-		{
-			FixedValue = ConvertToFixed(InVector3.x, -WorldHalfBounds, ClientRequiredPrecision);
-			SerializePrim(FixedValue, LenghtPerComp);
-		}
-
-		AxisSkipped = HasFlag(AxisToSkip, EAxisToSkip::Y);
-		SerializeBool(AxisSkipped);
-
-		if (!AxisSkipped)
-		{
-			FixedValue = ConvertToFixed(InVector3.y, -WorldHalfBounds, ClientRequiredPrecision);
-			SerializePrim(FixedValue, LenghtPerComp);
-		}
-
-		AxisSkipped = HasFlag(AxisToSkip, EAxisToSkip::Z);
-		SerializeBool(AxisSkipped);
-
-		if (!AxisSkipped)
-		{
-			FixedValue = ConvertToFixed(InVector3.z, -WorldHalfBounds, ClientRequiredPrecision);
-			SerializePrim(FixedValue, LenghtPerComp);
-		}
+		FixedValue = ConvertToFixed(InVector3.mZ, -WorldHalfBounds, ClientRequiredPrecision);
+		SerializePrim(FixedValue, LenghtPerComp);
+		
 	}
 }
 
 
-void MemoryStream::SerializeQuaternion(glm::quat& InQuaternion)
+void MemoryStream::SerializeQuaternion(Quaternion& InQuaternion)
 {
 	// for 1 and -1 32767 should be enough precision
 	constexpr float Precision = (2.f / 32767.f);
@@ -168,43 +130,43 @@ void MemoryStream::SerializeQuaternion(glm::quat& InQuaternion)
 	if (bIsReading)
 	{
 		SerializePrim(FixedValue, 2);
-		InQuaternion.x = ConvertFromFixed(FixedValue, -1.f, Precision);
+		InQuaternion.mX = ConvertFromFixed(FixedValue, -1.f, Precision);
 
 		FixedValue = 0;
 		SerializePrim(FixedValue, 2);
-		InQuaternion.y = ConvertFromFixed(FixedValue, -1.f, Precision);
+		InQuaternion.mY = ConvertFromFixed(FixedValue, -1.f, Precision);
 
 		FixedValue = 0;
 		SerializePrim(FixedValue, 2);
-		InQuaternion.z = ConvertFromFixed(FixedValue, -1.f, Precision);
+		InQuaternion.mZ = ConvertFromFixed(FixedValue, -1.f, Precision);
 
-		const float Squared = (InQuaternion.x * InQuaternion.x) +
-			(InQuaternion.y * InQuaternion.y) +
-			(InQuaternion.z * InQuaternion.z);
+		const float Squared = (InQuaternion.mX * InQuaternion.mX) +
+			(InQuaternion.mY * InQuaternion.mY) +
+			(InQuaternion.mZ * InQuaternion.mZ);
 
-		InQuaternion.w = glm::sqrt(1.f - Squared);
+		InQuaternion.mW = std::sqrt(1.f - Squared);
 
 		SerializePrim(bIsNegative, 1);
 
 		if (bIsNegative)
 		{
-			InQuaternion.w *= -1.f;
+			InQuaternion.mW *= -1.f;
 		}
 	}
 	else
 	{
-		InQuaternion = glm::normalize(InQuaternion);
+		//InQuaternion = std::normalize(InQuaternion);
 
-		FixedValue = ConvertToFixed(InQuaternion.x, -1.f, Precision);
+		FixedValue = ConvertToFixed(InQuaternion.mX, -1.f, Precision);
 		SerializePrim(FixedValue, 2);
 
-		FixedValue = ConvertToFixed(InQuaternion.y, -1.f, Precision);
+		FixedValue = ConvertToFixed(InQuaternion.mY, -1.f, Precision);
 		SerializePrim(FixedValue, 2);
 
-		FixedValue = ConvertToFixed(InQuaternion.z, -1.f, Precision);
+		FixedValue = ConvertToFixed(InQuaternion.mZ, -1.f, Precision);
 		SerializePrim(FixedValue, 2);
 
-		bIsNegative = InQuaternion.w < 0;
+		bIsNegative = InQuaternion.mW < 0;
 		SerializePrim(bIsNegative, 1);
 	}
 }

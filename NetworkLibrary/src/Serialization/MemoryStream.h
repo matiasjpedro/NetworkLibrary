@@ -5,7 +5,9 @@
 #include "ISerializableObject.h"
 #include "ByteSwapper.h"
 #include <string>
-#include "glm/fwd.hpp"
+
+struct Vector3;
+struct Quaternion;
 
 //Temporary, 0 for Little-Endian, 1 for Big-Endian
 #define STREAM_ENDIANNES 0
@@ -63,8 +65,8 @@ public:
 	void SerializeString(std::string& String);
 	void SerializeStringArr(std::vector<std::string>& Vector);
 
-	void SerializeVector3(glm::vec3& InVector3, uint8_t AxisToSkip = 0);
-	void SerializeQuaternion(glm::quat& InQuaternion);
+	void SerializeVector3(Vector3& InVector3);
+	void SerializeQuaternion(Quaternion& InQuaternion);
 	
 	//Helpers
 	const char* GetBufferPtr() const { return mBuffer; }
