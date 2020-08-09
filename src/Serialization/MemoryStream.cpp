@@ -2,7 +2,7 @@
 #include "ISerializableObject.h"
 #include <algorithm>
 #include "Compression.h"
-#include "Math/Trigonometry.h"
+#include "../Math/Trigonometry.h"
 
 void MemoryStream::SerializeRAW(void* Data, size_t InByteCount)
 {

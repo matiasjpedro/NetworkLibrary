@@ -15,8 +15,7 @@ project "NetworkLibrary"
 	language "C++"
 	links
 	{
-		"vendor/WS2/lib/**.lib",
-		"vendor/UtilsLibrary/bin/" .. outputdir .. "/**.lib"
+		"vendor/WS2/lib/**.lib"
 	}
 	
 	targetdir ("bin/" .. outputdir)
@@ -30,8 +29,7 @@ project "NetworkLibrary"
 	
 	includedirs
 	{
-		"vendor/WS2/include",
-		"vendor/UtilsLibrary/src/"
+		"vendor/WS2/include"
 	}
 	
 	filter "system:windows"
@@ -61,8 +59,7 @@ project "Sandbox"
 	
 	includedirs
 	{
-		"src/",
-		"vendor/UtilsLibrary/src/"
+		"src/"
 	}	
 	
 	filter "system:windows"

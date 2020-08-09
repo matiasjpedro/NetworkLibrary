@@ -1,10 +1,10 @@
 #pragma once
-#include "UnitTesting/Testeable.h"
+#include "../UnitTesting/Testeable.h"
 #include "../Serialization/MemoryStream.h"
 #include "../Serialization/ISerializableObject.h"
 #include "../Serialization/Compression.h"
 #include "../Serialization/MemoryBitStream.h"
-#include "Math/Trigonometry.h"
+#include "../Math/Trigonometry.h"
 
 #pragma region ITesteable
 #define SERIALIZATION_TESTS_ENUM(DO) \
