@@ -11,6 +11,7 @@ workspace "NetworkLibrary"
 outputdir= "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 	
 project "NetworkLibrary"
+	location "NetworkLibrary"
 	kind "StaticLib"
 	language "C++"
 	links
@@ -18,13 +19,13 @@ project "NetworkLibrary"
 		"vendor/WS2/lib/**.lib"
 	}
 	
-	targetdir ("bin/" .. outputdir)
-	objdir ("intermediate/" .. outputdir)
+	targetdir ("%{prj.name}/bin/" .. outputdir)
+	objdir ("%{prj.name}/intermediate/" .. outputdir)
 	
 	files
 	{
-		"src/**.h",
-		"src/**.cpp",
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp",
 	}
 	
 	includedirs
@@ -38,7 +39,7 @@ project "NetworkLibrary"
 		systemversion "latest"
 		
 project "Sandbox"
-	location "Sandbox"
+	location "NetworkLibrary"
 	kind "ConsoleApp"
 	language "C++"
 	links
@@ -52,14 +53,12 @@ project "Sandbox"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp",
-		"src/**.h",
-		"src/**.cpp"
+		"%{prj.name}/src/**.cpp"
 	}
 	
 	includedirs
 	{
-		"src/"
+		"NetworkLibrary/src/"
 	}	
 	
 	filter "system:windows"
