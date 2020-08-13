@@ -1,5 +1,96 @@
 #pragma once
 #include <cmath>
+
+struct Vector2
+{
+public:
+
+	float		mX, mY;
+
+	Vector2(float x, float y) :
+		mX(x),
+		mY(y)
+	{}
+
+	Vector2() :
+		mX(0.0f),
+		mY(0.0f)
+	{}
+
+	friend Vector2 operator+(const Vector2& inLeft, const Vector2& inRight)
+	{
+		return Vector2(inLeft.mX + inRight.mX, inLeft.mY + inRight.mY);
+	}
+
+	friend Vector2 operator-(const Vector2& inLeft, const Vector2& inRight)
+	{
+		return Vector2(inLeft.mX - inRight.mX, inLeft.mY - inRight.mY);
+	}
+
+	friend Vector2 operator*(const Vector2& inLeft, const Vector2& inRight)
+	{
+		return Vector2(inLeft.mX * inRight.mX, inLeft.mY * inRight.mY);
+	}
+
+	friend Vector2 operator*(float inScalar, const Vector2& inVec)
+	{
+		return Vector2(inVec.mX * inScalar, inVec.mY * inScalar);
+	}
+
+	friend Vector2 operator*(const Vector2& inVec, float inScalar)
+	{
+		return Vector2(inVec.mX * inScalar, inVec.mY * inScalar);
+	}
+
+	Vector2& operator*=(float inScalar)
+	{
+		mX *= inScalar;
+		mY *= inScalar;
+		return *this;
+	}
+
+	Vector2& operator+=(const Vector2& inRight)
+	{
+		mX += inRight.mX;
+		mY += inRight.mY;
+		return *this;
+	}
+
+	Vector2& operator-=(const Vector2& inRight)
+	{
+		mX -= inRight.mX;
+		mY -= inRight.mY;
+		return *this;
+	}
+
+	float Length()
+	{
+		return std::sqrtf(mX * mX + mY * mY);
+	}
+
+	float LengthSq()
+	{
+		return mX * mX + mY * mY;
+	}
+
+	void Normalize()
+	{
+		float length = Length();
+		mX /= length;
+		mY /= length;
+	}
+
+	friend float Dot(const Vector2& inLeft, const Vector2& inRight)
+	{
+		return (inLeft.mX * inRight.mX + inLeft.mY * inRight.mY);
+	}
+
+	friend Vector2 Lerp(const Vector2& inA, const Vector2& inB, float t)
+	{
+		return Vector2(inA + t * (inB - inA));
+	}
+};
+
 struct Vector3
 {
 public:
@@ -77,16 +168,6 @@ public:
 		return mX * mX + mY * mY + mZ * mZ;
 	}
 
-	float Length2D()
-	{
-		return std::sqrtf(mX * mX + mY * mY);
-	}
-
-	float LengthSq2D()
-	{
-		return mX * mX + mY * mY;
-	}
-
 	void Normalize()
 	{
 		float length = Length();
@@ -95,21 +176,9 @@ public:
 		mZ /= length;
 	}
 
-	void Normalize2D()
-	{
-		float length = Length2D();
-		mX /= length;
-		mY /= length;
-	}
-
 	friend float Dot(const Vector3& inLeft, const Vector3& inRight)
 	{
 		return (inLeft.mX * inRight.mX + inLeft.mY * inRight.mY + inLeft.mZ * inRight.mZ);
-	}
-
-	friend float Dot2D(const Vector3& inLeft, const Vector3& inRight)
-	{
-		return (inLeft.mX * inRight.mX + inLeft.mY * inRight.mY);
 	}
 
 	friend Vector3 Cross(const Vector3& inLeft, const Vector3& inRight)

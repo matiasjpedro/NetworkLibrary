@@ -4,39 +4,29 @@
 #include <unordered_map>
 #include <map>
 #include <algorithm>
-
-struct Vec2
-{
-	float X, Y = 0;
-
-	Vec2(float InX, float InY) :
-		X(InX), Y(InY)
-	{
-
-	}
-};
+#include "../Math/Trigonometry.h"
 
 class UObject
 {
 	uint32_t UniqueId;
-	Vec2 Location;
+	Vector2 Location;
 
 public:
 
 	UObject(uint32_t InUniqueId) :
-		UniqueId(InUniqueId), Location(Vec2(0,0))
+		UniqueId(InUniqueId), Location(Vector2(0,0))
 	{
 
 	}
 
-	UObject(uint32_t InUniqueId, const Vec2& InLocation) :
+	UObject(uint32_t InUniqueId, const Vector2& InLocation) :
 		UniqueId(InUniqueId), Location(InLocation)
 	{
 
 	}
 
-	void SetObjectLocation(const Vec2& InLocation) { Location = InLocation; }
-	Vec2 GetObjectLocation() const { return Location; }
+	void SetObjectLocation(const Vector2& InLocation) { Location = InLocation; }
+	Vector2 GetObjectLocation() const { return Location; }
 };
 
 struct FObjCellInfo

@@ -23,7 +23,7 @@ void UGridNode::UpdateGrid()
 {
 	for (auto& Obj : DynamicActorsMap)
 	{
-		const Vec2 Location = Obj.first->GetObjectLocation();
+		const Vector2 Location = Obj.first->GetObjectLocation();
 		FObjCellInfo& PreviousCellInfo = Obj.second;
 
 		FObjCellInfo NewCellInfo = GetCellInfoForObj(Location);
@@ -213,25 +213,25 @@ void UGridNode::GetCellNodesForObj(const FObjCellInfo& CellInfo, std::vector<UCe
 	}
 }
 
-FObjCellInfo UGridNode::GetCellInfoForObj(const Vec2& Location)
+FObjCellInfo UGridNode::GetCellInfoForObj(const Vector2& Location)
 {
 	FObjCellInfo CellInfo;
 
-	Vec2 LocationBias = Vec2(Location.X - SpatialBias.X, Location.Y - SpatialBias.Y);
+	Vector2 LocationBias = Vector2(Location.mX - SpatialBias.mX, Location.mY - SpatialBias.mY);
 
 	//TODO: For now just hardcoded
 	float ObjBounds = 10;
 
-	const float MinX = LocationBias.X - ObjBounds;
-	const float MinY = LocationBias.Y - ObjBounds;
-	float MaxX = LocationBias.X + ObjBounds;
-	float MaxY = LocationBias.Y + ObjBounds;
+	const float MinX = LocationBias.mX - ObjBounds;
+	const float MinY = LocationBias.mY - ObjBounds;
+	float MaxX = LocationBias.mX + ObjBounds;
+	float MaxY = LocationBias.mY + ObjBounds;
 
 	// If is out of bounds clamp it to the limit
 	if (MaxX > BoundsX || MaxY > BoundsY)
 	{
 #if GRID_LOGS
-		std::cout << " Out of bounds: " << Location.Y << " " << Location.X << '\n';
+		std::cout << " Out of bounds: " << Location.mY << " " << Location.mX << '\n';
 #endif
 
 		MaxX = std::min(MaxX, (float)BoundsX - 1.f);

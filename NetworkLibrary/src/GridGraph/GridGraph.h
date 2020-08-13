@@ -54,7 +54,7 @@ class UGridNode : public UNode
 {
 	uint32_t CellSize;
 	uint32_t BoundsX, BoundsY;
-	Vec2 SpatialBias;
+	Vector2 SpatialBias;
 
 	std::vector<std::vector<UCellNode>> Grid;
 	std::unordered_map<std::shared_ptr<UObject>, FObjCellInfo> DynamicActorsMap;
@@ -70,7 +70,7 @@ public:
 
 	virtual void RemoveObject(std::shared_ptr<UObject> InObj) override;
 
-	UGridNode(uint32_t InCellSize, Vec2 InSpatialBias, uint32_t InBoundsX, uint32_t InBoundsY) :
+	UGridNode(uint32_t InCellSize, Vector2 InSpatialBias, uint32_t InBoundsX, uint32_t InBoundsY) :
 		CellSize(InCellSize), SpatialBias(InSpatialBias), BoundsX(InBoundsX), BoundsY(InBoundsY)
 	{
 		const uint32_t AmountRows = BoundsX / CellSize;
@@ -95,7 +95,7 @@ public:
 	void UpdateGrid();
 
 	void GetCellNodesForObj(const FObjCellInfo& CellInfo, std::vector<UCellNode*>& OutNodes);
-	FObjCellInfo GetCellInfoForObj(const Vec2& Location);
+	FObjCellInfo GetCellInfoForObj(const Vector2& Location);
 
 #if GRID_LOGS
 	void DrawGridObjs() const;
