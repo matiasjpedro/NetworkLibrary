@@ -31,7 +31,7 @@ void ProcessDataFromClient(const TCPSocketPtr& SockPtr, const char* Segment, int
 {
 	std::string Msg;
 	MemoryStream Reader = MemoryStream(Segment, DataReceivedLenght);
-	Reader.SerializeString(Msg);
+	Reader << Msg;
 
 	std::cout << Msg << '\n';
 }
@@ -184,7 +184,7 @@ void ProcessClientChat(std::vector<TCPSocketPtr>& ClientSockets, TCPSocketPtr Li
 			if (Msg.size() <= MAX_CHAT_LENGTH)
 			{
 				MemoryStream Writer = MemoryStream();
-				Writer.SerializeString(Msg);
+				Writer << Msg;
 
 				for (const TCPSocketPtr& ClientSocket : ClientSockets)
 				{
@@ -271,7 +271,7 @@ void ProcessP2PClient(TCPSocketPtr STUNSocket)
 			std::string OtherClientIP;
 			MemoryStream Reader = MemoryStream(Segment, DataReceived);
 
-			Reader.SerializeString(OtherClientIP);
+			Reader << OtherClientIP;
 
 			std::cout << "Client Join MM: " << OtherClientIP << '\n';
 
@@ -338,7 +338,7 @@ void ProcessSTUNService(TCPSocketPtr ListenSocket)
 							NewClientAddrStr.replace(PortPos + 1, PortStr.size(), PortStr);
 
 							MemoryStream Writer = MemoryStream();
-							Writer.SerializeString(NewClientAddrStr);
+							Writer << NewClientAddrStr;
 
 							std::cout << "Send new client address to already connected client: " << NewClientAddrStr << '\n';
 
@@ -364,7 +364,7 @@ void ProcessSTUNService(TCPSocketPtr ListenSocket)
 						}
 
 						MemoryStream Writer = MemoryStream();
-						Writer.SerializeString(ClientAddrStr);
+						Writer << ClientAddrStr;
 
 						std::cout << "Send already connected client address to the new client: " << ClientAddrStr << '\n';
 

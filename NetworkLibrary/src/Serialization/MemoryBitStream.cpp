@@ -2,14 +2,14 @@
 #include <algorithm>
 #include "Compression.h"
 
-void MemoryBitStream::SerializeBitsRAW(void* Data, size_t InBitCount)
+void MemoryBitStream::SerializeBits(void* Data, size_t InBitCount)
 {	
 	uint8_t* DestByte = reinterpret_cast<uint8_t*>(Data);
 
 	//Read all the bits
 	while (InBitCount > 8)
 	{
-		SerializeBits_Internal(*DestByte, 8);
+		SerializeBitsInternal(*DestByte, 8);
 		++DestByte;
 		InBitCount -= 8;
 	}
@@ -17,18 +17,13 @@ void MemoryBitStream::SerializeBitsRAW(void* Data, size_t InBitCount)
 	//Read anything left
 	if (InBitCount > 0)
 	{
-		SerializeBits_Internal(*DestByte, InBitCount);
+		SerializeBitsInternal(*DestByte, InBitCount);
 	}	
 }
 
-void MemoryBitStream::SerializeRAW(void* Data, size_t InByteCount)
+void MemoryBitStream::Serialize(void* Data, size_t InByteCount)
 {
-	SerializeBitsRAW(Data, InByteCount << 3);
-}
-
-void MemoryBitStream::SerializeBool(bool& Value)
-{
-	SerializeBitsRAW(&Value, 1);
+	SerializeBits(Data, InByteCount << 3);
 }
 
 void MemoryBitStream::ReallocBuffer(uint32_t InNewLenght)
@@ -39,7 +34,7 @@ void MemoryBitStream::ReallocBuffer(uint32_t InNewLenght)
 	mCapacity = InNewLenght;
 }
 
-void MemoryBitStream::SerializeBits_Internal(uint8_t& Data, size_t InBitCount)
+void MemoryBitStream::SerializeBitsInternal(uint8_t& Data, size_t InBitCount)
 {
 	if (bIsReading)
 	{

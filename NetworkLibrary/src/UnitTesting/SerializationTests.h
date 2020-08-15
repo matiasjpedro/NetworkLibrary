@@ -15,6 +15,7 @@
 	DO(TEST_SERIALIZE_SERIALIZABLEOBJECT) \
 	DO(TEST_SERIALIZE_SERIALIZABLEOBJECT_VECTOR) \
 	DO(TEST_SERIALIZE_VECTOR3) \
+	DO(TEST_SERIALIZE_VECTOR3_VECTOR) \
 	DO(TEST_SERIALIZE_QUATERNION) 
 
 
@@ -39,9 +40,9 @@ public:
 
 	}
 
-	void Serialize(class MemoryStream* Stream) override
+	void Serialize(class MemoryStream& Stream) override
 	{
-		Stream->SerializePrim(Health);
+		Stream << Health;
 	}
 };
 
@@ -50,14 +51,14 @@ bool TestPrimitive()
 {
 	uint32_t WriteInt = 13;
 	T WriteStream = T();
-	WriteStream.SerializePrim(WriteInt, 2);
-	WriteStream.SerializePrim(WriteInt, 4);
+	WriteStream << WriteInt;
+	WriteStream << WriteInt;
 
 	uint32_t ReadInt = 0;
 	uint32_t ReadInt2 = 0;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializePrim(ReadInt, 2);
-	ReadStream.SerializePrim(ReadInt2, 4);
+	ReadStream << ReadInt;
+	ReadStream << ReadInt2;
 
 	return ReadInt == WriteInt && ReadInt2 == WriteInt;
 }
@@ -68,12 +69,12 @@ bool TestPrimitiveVector()
 	std::vector<uint32_t> WriteVector = { 13, 12 };
 
 	T WriteStream = T();
-	WriteStream.SerializePrimArr(WriteVector, 2);
+	WriteStream << WriteVector;
 
 	std::vector<uint32_t> ReadVector;
 
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializePrimArr(ReadVector, 2);
+	ReadStream << ReadVector;
 
 	return ReadVector[0] == WriteVector[0] && ReadVector[1] == WriteVector[1];
 }
@@ -83,11 +84,11 @@ bool TestString()
 {
 	std::string WriteString = std::string("Test");
 	T WriteStream = T();
-	WriteStream.SerializeString(WriteString);
+	WriteStream << WriteString;
 
 	std::string ReadString;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeString(ReadString);
+	ReadStream << ReadString;
 
 	return WriteString.compare(ReadString);
 }
@@ -98,11 +99,11 @@ bool TestStringVector()
 	std::vector<std::string> WriteVector = { std::string("Test1"),  std::string("Test2") };
 
 	T WriteStream = T();
-	WriteStream.SerializeStringArr(WriteVector);
+	WriteStream << WriteVector;
 
 	std::vector<std::string> ReadVector;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeStringArr(ReadVector);
+	ReadStream << ReadVector;
 
 	return WriteVector[0].compare(ReadVector[0]) && WriteVector[1].compare(ReadVector[1]);
 }
@@ -113,11 +114,11 @@ bool TestSerializableObject()
 	SerializableObject WriteObj = SerializableObject(8);
 
 	T WriteStream = T();
-	WriteStream.SerializeObject(WriteObj);
+	WriteStream << WriteObj;
 
 	SerializableObject ReadObj;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeObject(ReadObj);
+	ReadStream << ReadObj;
 
 	return WriteObj.Health == ReadObj.Health;
 }
@@ -128,11 +129,11 @@ bool TestSerializableObjectVector()
 	std::vector<SerializableObject> WriteVector{ SerializableObject(5) , SerializableObject(3) };
 
 	T WriteStream = T();
-	WriteStream.SerializeObjectArr(WriteVector);
+	WriteStream << WriteVector;
 
 	std::vector<SerializableObject> ReadVector;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeObjectArr(ReadVector);
+	ReadStream << ReadVector;
 
 	return ReadVector[0].Health == WriteVector[0].Health && ReadVector[1].Health == WriteVector[1].Health;
 }
@@ -143,13 +144,38 @@ bool TestVector3()
 	Vector3 WriteVector3 = Vector3(5.f, 3.f, 5.f);
 	T WriteStream = T();
 
-	WriteStream.SerializeVector3(WriteVector3);
+	WriteStream << WriteVector3;
 
 	Vector3 ReadVector3;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeVector3(ReadVector3);
+	ReadStream << ReadVector3;
 
 	return WriteVector3.mX == ReadVector3.mX && WriteVector3.mY == ReadVector3.mY && ReadVector3.mZ == WriteVector3.mZ;
+}
+
+template<typename T>
+bool TestVector3Vector()
+{
+	std::vector<Vector3> WriteVector{ Vector3(5,3,4) , Vector3(3,4,5) };
+
+	T WriteStream = T();
+	WriteStream << WriteVector;
+
+	std::vector<Vector3> ReadVector;
+	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
+	ReadStream << ReadVector;
+
+	for (int i = 0; i < ReadVector.size(); i++)
+	{
+		if (ReadVector[i].mX == WriteVector[i].mX
+			&& ReadVector[i].mY == WriteVector[i].mY
+			&& ReadVector[i].mZ == WriteVector[i].mZ)
+			continue;
+
+		return false;
+	}
+
+	return true;
 }
 
 template<typename T>
@@ -158,11 +184,11 @@ bool TestQuaternion()
 	Quaternion WriteQuat = Quaternion(-0.890f, 0.001f, 0.432f, -0.144f);
 	T WriteStream = T();
 
-	WriteStream.SerializeQuaternion(WriteQuat);
+	WriteStream << WriteQuat;
 
 	Quaternion ReadQuat;
 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
-	ReadStream.SerializeQuaternion(ReadQuat);
+	ReadStream << ReadQuat;
 	
 	constexpr float Precision = 0.01f;
 
@@ -230,6 +256,11 @@ class SerializationTests : public ITesteable<ESerializationTests>
 		case ESerializationTests::TEST_SERIALIZE_VECTOR3:
 		{
 			return TestVector3<MemoryStream>() && TestVector3<MemoryBitStream>();
+		}
+			break;
+		case ESerializationTests::TEST_SERIALIZE_VECTOR3_VECTOR:
+		{
+			return TestVector3Vector<MemoryStream>() && TestVector3Vector<MemoryBitStream>();
 		}
 			break;
 		case ESerializationTests::TEST_SERIALIZE_QUATERNION:

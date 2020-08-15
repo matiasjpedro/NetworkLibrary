@@ -4,7 +4,7 @@
 #include "Compression.h"
 #include "../Math/Trigonometry.h"
 
-void MemoryStream::SerializeRAW(void* Data, size_t InByteCount)
+void MemoryStream::Serialize(void* Data, size_t InByteCount)
 {
 	if (bIsReading)
 	{
@@ -31,54 +31,6 @@ void MemoryStream::SerializeRAW(void* Data, size_t InByteCount)
 	}
 }
 
-void MemoryStream::SerializeString(std::string& String)
-{
-	size_t StringSize = 0;
-	if (!bIsReading)
-	{
-		//+1 for null termination
-		StringSize = String.size() + 1;
-	}
-
-	SerializePrim(StringSize, 2);
-
-	if (bIsReading)
-	{
-		String.resize(StringSize);
-	}
-
-	SerializeRAW((void*)String.data(), StringSize);
-}
-
-void MemoryStream::SerializeStringArr(std::vector<std::string>& Vector)
-{
-	size_t ElementCount = 0;
-
-	if (!bIsReading)
-	{
-		ElementCount = Vector.size();
-	}
-
-	// With two byte should be enough
-	SerializePrim(ElementCount,2);
-
-	if (bIsReading)
-	{
-		Vector.resize(ElementCount);
-	}
-
-	for (std::string& Element : Vector)
-	{
-
-		SerializeString(Element);
-	}
-}
-
-void MemoryStream::SerializeObject(ISerializableObject& SerializableObject)
-{
-	SerializableObject.Serialize(this);
-}
-
 void MemoryStream::SerializeVector3(Vector3& InVector3)
 {
 	// Suppose this is our world bounds
@@ -93,28 +45,28 @@ void MemoryStream::SerializeVector3(Vector3& InVector3)
 
 	if (bIsReading)
 	{
-		SerializePrim(FixedValue, LenghtPerComp);
+		ByteOrderSerialize(FixedValue, LenghtPerComp);
 		InVector3.mX = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);		
 
 		FixedValue = 0;
-		SerializePrim(FixedValue, LenghtPerComp);
+		ByteOrderSerialize(FixedValue, LenghtPerComp);
 		InVector3.mY = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);
 		
 		FixedValue = 0;
-		SerializePrim(FixedValue, LenghtPerComp);
+		ByteOrderSerialize(FixedValue, LenghtPerComp);
 		InVector3.mZ = ConvertFromFixed(FixedValue, -WorldHalfBounds, ClientRequiredPrecision);
 	}
 	else
 	{
 		
 		FixedValue = ConvertToFixed(InVector3.mX, -WorldHalfBounds, ClientRequiredPrecision);
-		SerializePrim(FixedValue, LenghtPerComp);
+		ByteOrderSerialize(FixedValue, LenghtPerComp);
 		
 		FixedValue = ConvertToFixed(InVector3.mY, -WorldHalfBounds, ClientRequiredPrecision);
-		SerializePrim(FixedValue, LenghtPerComp);
+		ByteOrderSerialize(FixedValue, LenghtPerComp);
 
 		FixedValue = ConvertToFixed(InVector3.mZ, -WorldHalfBounds, ClientRequiredPrecision);
-		SerializePrim(FixedValue, LenghtPerComp);
+		ByteOrderSerialize(FixedValue, LenghtPerComp);
 		
 	}
 }
@@ -129,15 +81,15 @@ void MemoryStream::SerializeQuaternion(Quaternion& InQuaternion)
 
 	if (bIsReading)
 	{
-		SerializePrim(FixedValue, 2);
+		ByteOrderSerialize(FixedValue, 2);
 		InQuaternion.mX = ConvertFromFixed(FixedValue, -1.f, Precision);
 
 		FixedValue = 0;
-		SerializePrim(FixedValue, 2);
+		ByteOrderSerialize(FixedValue, 2);
 		InQuaternion.mY = ConvertFromFixed(FixedValue, -1.f, Precision);
 
 		FixedValue = 0;
-		SerializePrim(FixedValue, 2);
+		ByteOrderSerialize(FixedValue, 2);
 		InQuaternion.mZ = ConvertFromFixed(FixedValue, -1.f, Precision);
 
 		const float Squared = (InQuaternion.mX * InQuaternion.mX) +
@@ -146,7 +98,7 @@ void MemoryStream::SerializeQuaternion(Quaternion& InQuaternion)
 
 		InQuaternion.mW = std::sqrt(1.f - Squared);
 
-		SerializePrim(bIsNegative, 1);
+		ByteOrderSerialize(bIsNegative, 1);
 
 		if (bIsNegative)
 		{
@@ -158,22 +110,17 @@ void MemoryStream::SerializeQuaternion(Quaternion& InQuaternion)
 		//InQuaternion = std::normalize(InQuaternion);
 
 		FixedValue = ConvertToFixed(InQuaternion.mX, -1.f, Precision);
-		SerializePrim(FixedValue, 2);
+		ByteOrderSerialize(FixedValue, 2);
 
 		FixedValue = ConvertToFixed(InQuaternion.mY, -1.f, Precision);
-		SerializePrim(FixedValue, 2);
+		ByteOrderSerialize(FixedValue, 2);
 
 		FixedValue = ConvertToFixed(InQuaternion.mZ, -1.f, Precision);
-		SerializePrim(FixedValue, 2);
+		ByteOrderSerialize(FixedValue, 2);
 
 		bIsNegative = InQuaternion.mW < 0;
-		SerializePrim(bIsNegative, 1);
+		*this << bIsNegative;
 	}
-}
-
-void MemoryStream::SerializeBool(bool& Value)
-{
-	SerializePrim(Value);
 }
 
 void MemoryStream::ReallocBuffer(uint32_t InNewLenght)

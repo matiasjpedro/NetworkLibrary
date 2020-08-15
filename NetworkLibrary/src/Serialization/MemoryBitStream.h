@@ -14,10 +14,15 @@ public:
 	{
 	}
 
-	void SerializeBitsRAW(void* Data, size_t InBitCount);
-	virtual void SerializeRAW(void* Data, size_t InByteCount) override;
+	void SerializeBits(void* Data, size_t InBitCount);
+	virtual void Serialize(void* Data, size_t InByteCount) override;
 
-	virtual void SerializeBool(bool& Value) override;
+	virtual MemoryStream& operator<<(bool& Boolean) override
+	{
+		this->SerializeBits((void*)&Boolean, 1);
+
+		return *this;
+	}
 
 protected:
 
@@ -25,5 +30,5 @@ protected:
 
 private:
 
-	void SerializeBits_Internal(uint8_t& Data, size_t InBitCount);
+	void SerializeBitsInternal(uint8_t& Data, size_t InBitCount);
 };

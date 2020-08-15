@@ -1,10 +1,10 @@
 #pragma once
 #include <stdint.h>
-#include <cstdlib>
 #include <vector>
 #include "ISerializableObject.h"
 #include "ByteSwapper.h"
 #include <string>
+#include <iostream>
 
 struct Vector3;
 struct Quaternion;
@@ -47,26 +47,150 @@ public:
 
 	const bool IsReading() { return bIsReading; }
 
-	//RAW
-	virtual void SerializeRAW(void* Data, size_t InByteCount);
-	virtual void SerializeBool(bool& Value);
+	virtual void Serialize(void* Data, size_t InByteCount);
 
 	//Primitives
 	template<typename T>
-	void SerializePrim(T& Data, size_t InByteCount = sizeof(T));
-	template<typename T>
-	void SerializePrimArr(std::vector<T>& Vector, size_t InBytePerElement = sizeof(T));
+	void ByteOrderSerialize(T& Data, size_t InByteCount = sizeof(T));
 	
-	//Specializations.
-	void SerializeObject(class ISerializableObject& SerializableObject);
+	virtual MemoryStream& operator<<(bool& Boolean)
+	{
+		this->Serialize((void*)&Boolean, 1);
+
+		return *this;
+	}
+
+	//Primitives
+	friend MemoryStream& operator<<(class MemoryStream& Ar, float& Primitive)
+	{
+		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::uint8_t& Primitive)
+	{
+		Ar.Serialize((void*)&Primitive, 1);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::uint16_t& Primitive)
+	{
+		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::uint32_t& Primitive)
+	{
+		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::uint64_t& Primitive)
+	{
+		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::int8_t& Primitive)
+	{
+		Ar.Serialize((void*)&Primitive, 1);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::int16_t& Primitive)
+	{
+		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::int32_t& Primitive)
+	{
+		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, std::int64_t& Primitive)
+	{
+		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	//Others
+	friend MemoryStream& operator<<(class MemoryStream& Ar, ISerializableObject& Obj)
+	{
+		// Let the SerialiableObject handle their own way to serialize.
+		Obj.Serialize(Ar);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, struct Vector3& Obj)
+	{
+		Ar.SerializeVector3(Obj);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(class MemoryStream& Ar, struct Quaternion& Obj)
+	{
+		Ar.SerializeQuaternion(Obj);
+
+		return Ar;
+	}
+
+	friend MemoryStream& operator<<(MemoryStream& Ar, std::string& String)
+	{
+		uint16_t StringSize = 0;
+		if (!Ar.bIsReading)
+		{
+			//+1 for null termination
+			StringSize = String.size() + 1;
+		}
+
+		Ar << StringSize;
+
+		if (Ar.bIsReading)
+		{
+			String.resize(StringSize);
+		}
+
+		Ar.Serialize((void*)String.data(), StringSize);
+
+		return Ar;
+	}
+
 	template<typename T>
-	void SerializeObjectArr(std::vector<T>& Vector);
+	friend MemoryStream& operator<<(MemoryStream& Ar, std::vector<T>& Vector)
+	{
+		uint16_t ElementCount = 0;
+		if (!Ar.bIsReading)
+		{
+			ElementCount = Vector.size();
+		}
 
-	void SerializeString(std::string& String);
-	void SerializeStringArr(std::vector<std::string>& Vector);
+		Ar << ElementCount;
 
-	void SerializeVector3(Vector3& InVector3);
-	void SerializeQuaternion(Quaternion& InQuaternion);
+		if (Ar.bIsReading)
+		{
+			Vector.resize(ElementCount);
+		}
+
+		for (T& Element : Vector)
+		{
+			Ar << Element;
+		}
+
+		return Ar;
+	}
 	
 	//Helpers
 	const char* GetBufferPtr() const { return mBuffer; }
@@ -75,89 +199,35 @@ public:
 
 protected:
 
-	bool bIsReading;
 	char* mBuffer;
 	uint32_t mHead;
 	uint32_t mCapacity;
+	uint8_t bIsReading : 1;
 
 	virtual void ReallocBuffer(uint32_t InNewLenght);
 
 private:
+
+	void SerializeVector3(struct Vector3& InVector3);
+	void SerializeQuaternion(struct Quaternion& InQuaternion);
 
 	template <typename T>
 	T ByteSwap(T inData);	
 };
 
 template<typename T>
-void MemoryStream::SerializePrim(T& Data, size_t InByteCount /*= sizeof(T)*/)
+void MemoryStream::ByteOrderSerialize(T& Data, size_t InByteCount /*= sizeof(T)*/)
 {
 	static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value, "Generic Write only support primitive data types, make an specialization for this type");
-	
+
 	if (STREAM_ENDIANNES != PLATFORM_ENDIANNES)
 	{
 		T SwappedData = ByteSwap(Data);
-		SerializeRAW(&SwappedData, InByteCount);
+		Serialize(&SwappedData, InByteCount);
 	}
 	else
 	{
-		SerializeRAW(&Data, InByteCount);
-	}
-}
-
-template<typename T>
-void MemoryStream::SerializePrimArr(std::vector<T>& Vector, size_t InBytePerElement /*= sizeof(T)*/)
-{
-	size_t ElementCount = 0; 
-	
-	if (!bIsReading)
-	{
-		ElementCount = Vector.size();
-	}
-
-	SerializePrim(ElementCount, 2);
-
-	if (bIsReading)
-	{
-		Vector.resize(ElementCount);
-	}
-
-	static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value, "Generic Write only support primitive data types, make an specialization for this type");
-
-	if (InBytePerElement == sizeof(T))
-	{
-		SerializeRAW(Vector.data(), ElementCount * InBytePerElement);
-	}
-	else
-	{
-		for (T& Element : Vector)
-		{
-
-			SerializeRAW((void*)&Element, InBytePerElement);
-		}
-	}
-
-}
-
-template<typename T>
-void MemoryStream::SerializeObjectArr(std::vector<T>& Vector)
-{
-	size_t ElementCount = 0;
-
-	if (!bIsReading)
-	{
-		ElementCount = Vector.size();
-	}
-
-	SerializePrim(ElementCount, 2);
-
-	if (bIsReading)
-	{
-		Vector.resize(ElementCount);
-	}
-
-	for (const T& Element : Vector)
-	{
-		SerializeObject((ISerializableObject&)Element);	
+		Serialize(&Data, InByteCount);
 	}
 }
 
