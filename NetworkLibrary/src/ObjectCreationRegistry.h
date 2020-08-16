@@ -1,7 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include "UObject.h"
-#include "../Actor.h"
+#include <assert.h>
 
 typedef UObject* (*ObjectCreationFunc)();
 

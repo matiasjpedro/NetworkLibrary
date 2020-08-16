@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <vector>
 #include "ISerializableObject.h"
+#include "../UObject.h"
 #include "ByteSwapper.h"
 #include <string>
 #include <iostream>
@@ -85,6 +86,14 @@ public:
 	friend MemoryStream& operator<<(class MemoryStream& Ar, std::uint32_t& Primitive)
 	{
 		Ar.ByteOrderSerialize(Primitive);
+
+		return Ar;
+	}
+
+	// [TO THINK] hacky const version to allow temp variables, think a better way.
+	friend MemoryStream& operator<<(class MemoryStream& Ar, const std::uint32_t& Primitive)
+	{
+		Ar.ByteOrderSerialize(const_cast<std::uint32_t&>(Primitive));
 
 		return Ar;
 	}

@@ -32,3 +32,31 @@ private:
 
 	void SerializeBitsInternal(uint8_t& Data, size_t InBitCount);
 };
+
+template<int tValue, int tBits>
+struct GetRequiredBitHelper
+{
+	enum
+	{
+		Value = GetRequiredBitHelper<(tValue >> 1), tBits + 1>::Value
+	};
+};
+
+template<int tBits>
+struct GetRequiredBitHelper<0, tBits>
+{
+	enum
+	{
+		
+		Value = tBits
+	};
+};
+
+template<int tValue>
+struct GetRequiredBits
+{
+	enum
+	{
+		Value = GetRequiredBitHelper<tValue, 0>::Value
+	};
+};

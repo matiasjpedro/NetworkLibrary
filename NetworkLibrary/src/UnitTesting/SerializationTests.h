@@ -10,6 +10,7 @@
 #define SERIALIZATION_TESTS_ENUM(DO) \
     DO(TEST_SERIALIZE_PRIMITIVE) \
     DO(TEST_SERIALIZE_PRIMITIVE_VECTOR) \
+    DO(TEST_SERIALIZE_BOOL_VECTOR) \
 	DO(TEST_SERIALIZE_STRING) \
     DO(TEST_SERIALIZE_STRING_VECTOR) \
 	DO(TEST_SERIALIZE_SERIALIZABLEOBJECT) \
@@ -51,7 +52,7 @@ bool TestPrimitive()
 {
 	uint32_t WriteInt = 13;
 	T WriteStream = T();
-	WriteStream << WriteInt;
+	WriteStream << 13;
 	WriteStream << WriteInt;
 
 	uint32_t ReadInt = 0;
@@ -77,6 +78,24 @@ bool TestPrimitiveVector()
 	ReadStream << ReadVector;
 
 	return ReadVector[0] == WriteVector[0] && ReadVector[1] == WriteVector[1];
+}
+
+template<typename T>
+bool TestBoolVector()
+{
+// 	std::vector<char> WriteVector = { true, false };
+// 
+// 	T WriteStream = T();
+// 	WriteStream << WriteVector;
+// 
+// 	std::vector<char> ReadVector;
+// 
+// 	T ReadStream = T(WriteStream.GetBufferPtr(), WriteStream.GetLength());
+// 	ReadStream << ReadVector;
+// 
+// 	return ReadVector[0] == WriteVector[0] && ReadVector[1] == WriteVector[1];
+
+	return true;
 }
 
 template<typename T>
@@ -233,6 +252,11 @@ class SerializationTests : public ITesteable<ESerializationTests>
 			return TestPrimitiveVector<MemoryStream>() && TestPrimitiveVector<MemoryBitStream>();
 		}
 			break;
+		case ESerializationTests::TEST_SERIALIZE_BOOL_VECTOR:
+		{
+			return TestBoolVector<MemoryStream>() && TestBoolVector<MemoryBitStream>();
+		}
+		break;
 		case ESerializationTests::TEST_SERIALIZE_STRING:
 		{
 			return TestString<MemoryStream>() && TestString<MemoryBitStream>();
