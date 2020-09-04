@@ -9,7 +9,7 @@ class LinkingContext
 public:
 
 	uint32_t GetNetworkId(UObject* InObject, bool InShouldCreateIfNotFound);
-	UObject* GetObject(uint32_t InNetId);
+	UObject* GetObjectById(uint32_t InNetId);
 
 	void AddObject(UObject* InObject, uint32_t InNetId)
 	{

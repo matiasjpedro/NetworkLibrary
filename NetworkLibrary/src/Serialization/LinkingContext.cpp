@@ -1,5 +1,4 @@
 #include "LinkingContext.h"
-#include "../UObject.h"
 
 uint32_t LinkingContext::GetNetworkId(UObject* InObject, bool InShouldCreateIfNotFound)
 {
@@ -18,7 +17,7 @@ uint32_t LinkingContext::GetNetworkId(UObject* InObject, bool InShouldCreateIfNo
 	return 0;
 }
 
-UObject* LinkingContext::GetObject(uint32_t InNetId)
+UObject* LinkingContext::GetObjectById(uint32_t InNetId)
 {
 	auto It = mNetIdToObjectMap.find(InNetId);
 	if (It != mNetIdToObjectMap.end())

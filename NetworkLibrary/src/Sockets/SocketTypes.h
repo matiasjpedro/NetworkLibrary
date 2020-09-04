@@ -120,6 +120,11 @@ public:
 		memcpy(&mSockAddr, &inSockAddr, sizeof(sockaddr));
 	}
 
+	bool operator==(const SocketAddress& Other)
+	{
+		return ToString() == Other.ToString();
+	}
+
 	int GetSize() const { return sizeof(sockaddr); }
 
 	std::string ToString() const

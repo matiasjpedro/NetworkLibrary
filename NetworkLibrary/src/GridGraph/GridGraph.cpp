@@ -3,7 +3,7 @@
 #include <iostream>
 #endif
 
-void UGridNode::RemoveObject(std::shared_ptr<UObject> InObj)
+void UGridNode::RemoveObject(std::shared_ptr<UGridObject> InObj)
 {
 	auto& FoundObj = DynamicActorsMap.find(InObj);
 

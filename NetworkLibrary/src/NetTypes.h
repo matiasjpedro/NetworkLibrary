@@ -1,6 +1,6 @@
 #pragma once
 
-enum class PacketType
+enum PacketType
 {
 	PT_Hello,
 	PT_ReplicationData,

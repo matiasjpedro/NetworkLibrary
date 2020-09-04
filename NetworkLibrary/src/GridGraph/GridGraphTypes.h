@@ -6,20 +6,20 @@
 #include <algorithm>
 #include "../Math/Trigonometry.h"
 
-class UObject
+class UGridObject
 {
 	uint32_t UniqueId;
 	Vector2 Location;
 
 public:
 
-	UObject(uint32_t InUniqueId) :
+	UGridObject(uint32_t InUniqueId) :
 		UniqueId(InUniqueId), Location(Vector2(0,0))
 	{
 
 	}
 
-	UObject(uint32_t InUniqueId, const Vector2& InLocation) :
+	UGridObject(uint32_t InUniqueId, const Vector2& InLocation) :
 		UniqueId(InUniqueId), Location(InLocation)
 	{
 

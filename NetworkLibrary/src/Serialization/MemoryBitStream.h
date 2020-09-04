@@ -24,6 +24,9 @@ public:
 		return *this;
 	}
 
+	uint32_t GetLengthInBytes() const { return std::ceilf((float)mHead  / 8.f); }
+
+
 protected:
 
 	virtual void ReallocBuffer(uint32_t InNewLenght) override;

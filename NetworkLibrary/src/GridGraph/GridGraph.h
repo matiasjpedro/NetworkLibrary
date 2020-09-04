@@ -10,8 +10,8 @@ class UNode
 {
 public:
 
-	virtual void AddObject(std::shared_ptr<UObject> InObj) {};
-	virtual void RemoveObject(std::shared_ptr<UObject> InObj) {};
+	virtual void AddObject(std::shared_ptr<UGridObject> InObj) {};
+	virtual void RemoveObject(std::shared_ptr<UGridObject> InObj) {};
 
 protected:
 
@@ -22,7 +22,7 @@ class UCellNode : UNode
 {
 	uint32_t CellX, CellY;
 
-	std::vector<std::shared_ptr<UObject>> Objects;
+	std::vector<std::shared_ptr<UGridObject>> Objects;
 
 public:
 
@@ -32,12 +32,12 @@ public:
 
 	}
 
-	virtual void AddObject(std::shared_ptr<UObject> InObj) override
+	virtual void AddObject(std::shared_ptr<UGridObject> InObj) override
 	{
 		Objects.push_back(InObj);
 	}
 
-	virtual void RemoveObject(std::shared_ptr<UObject> InObj) override
+	virtual void RemoveObject(std::shared_ptr<UGridObject> InObj) override
 	{
 		Objects.erase(std::remove(Objects.begin(), Objects.end(), InObj));
 
@@ -46,7 +46,7 @@ public:
 	inline uint32_t GetCellX() const { return CellX; }
 	inline uint32_t GetCellY() const { return CellY; }
 
-	inline const std::vector<std::shared_ptr<UObject>>& GetObjects() const { return Objects; }
+	inline const std::vector<std::shared_ptr<UGridObject>>& GetObjects() const { return Objects; }
 
 };
 
@@ -57,18 +57,18 @@ class UGridNode : public UNode
 	Vector2 SpatialBias;
 
 	std::vector<std::vector<UCellNode>> Grid;
-	std::unordered_map<std::shared_ptr<UObject>, FObjCellInfo> DynamicActorsMap;
+	std::unordered_map<std::shared_ptr<UGridObject>, FObjCellInfo> DynamicActorsMap;
 
 	std::vector<UCellNode*> GatheredNodes;
 
 public:
 
-	virtual void AddObject(std::shared_ptr<UObject> InObj) override
+	virtual void AddObject(std::shared_ptr<UGridObject> InObj) override
 	{
 		DynamicActorsMap.emplace(InObj, FObjCellInfo());
 	}
 
-	virtual void RemoveObject(std::shared_ptr<UObject> InObj) override;
+	virtual void RemoveObject(std::shared_ptr<UGridObject> InObj) override;
 
 	UGridNode(uint32_t InCellSize, Vector2 InSpatialBias, uint32_t InBoundsX, uint32_t InBoundsY) :
 		CellSize(InCellSize), SpatialBias(InSpatialBias), BoundsX(InBoundsX), BoundsY(InBoundsY)
