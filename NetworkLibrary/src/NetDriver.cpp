@@ -59,8 +59,7 @@ void NetDriver::Init()
 		PacketType Package = PacketType::PT_Hello;
 		WriteStream.SerializeBits(&Package, GetRequiredBits<(int)PacketType::PT_MAX>::Value);
 		
-		const int BytesLenght = WriteStream.GetLength() >> 3;
-		NetSocket->SendTo(WriteStream.GetBufferPtr(), std::max<int>(BytesLenght,1), ServerAddress);
+		NetSocket->SendTo(WriteStream.GetBufferPtr(), WriteStream.GetLengthInBytes(), ServerAddress);
 	}
 }
 
