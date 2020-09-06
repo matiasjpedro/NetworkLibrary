@@ -8,6 +8,7 @@
 #include "WinSock2.h"
 #include "Sockets/UDPSocket.h"
 #include "Sockets/SocketUtil.h"
+#include "ObjectReplicationHeader.h"
 
 static constexpr int DEFAULT_CLIENT = 27015;
 static constexpr int DEFAULT_SERVER = 27016;
@@ -80,23 +81,29 @@ void NetDriver::ReplicateWorldState(MemoryBitStream& InStream, const std::vector
 
 	InStream << (uint32_t)InWorldObjects.size();
 
+	//TODO: Implement GridGraph Here
 	for (UObject* WorldObject : InWorldObjects)
 	{
-		ReplicateObjectIntoStream(InStream, WorldObject);	
+		ReplicateObjectIntoStream(InStream, WorldObject, ReplicationAction::RA_Create);	
 	}
 }
 
 void NetDriver::ReceiveReplicatedWorldState(MemoryBitStream& InStream)
 {
-	std::unordered_set<UObject*> ReceivedObjects;
 
 	int Amount = 0;
 	InStream << Amount;
 
+	std::unordered_set<UObject*> ReceivedObjects;
+	ReceivedObjects.reserve(Amount);
+
 	while (Amount > 0)
 	{
 		UObject* ReceivedObject = ReceiveReplicatedObject(InStream);
-		ReceivedObjects.insert(ReceivedObject);
+		if (ReceivedObject != nullptr)
+		{
+			ReceivedObjects.insert(ReceivedObject);
+		}
 		Amount--;
 	}
 
@@ -113,41 +120,79 @@ void NetDriver::ReceiveReplicatedWorldState(MemoryBitStream& InStream)
 	mReplicatedObjects = ReceivedObjects;
 }
 
-void NetDriver::ReplicateObjectIntoStream(MemoryBitStream& InStream, UObject* InObject)
+void NetDriver::ReplicateObjectIntoStream(MemoryBitStream& InStream, UObject* InObject, ReplicationAction InRA)
 {
-	uint32_t NetId = mLinkingContextPtr->GetNetworkId(InObject, true);
-	uint32_t ClassId = InObject->GetClassId();
+	const bool bShouldCreate = InRA == ReplicationAction::RA_Create;
+	ObjectReplicationHeader ReplHeader = ObjectReplicationHeader(ReplicationAction::RA_Create, mLinkingContextPtr->GetNetworkId(InObject, bShouldCreate), InObject->GetClassId());
 
-	//Write unique id
-	InStream << NetId;
+	InStream << ReplHeader;
 
-	//Write class
-	InStream << ClassId;
-
-	//Write data
-	InStream << *(static_cast<ISerializableObject*>(InObject));
+	if (InRA != RA_Destroy)
+	{
+		InStream << *(static_cast<ISerializableObject*>(InObject));
+	}
 }
 
 UObject* NetDriver::ReceiveReplicatedObject(MemoryBitStream& InStream)
 {
-	std::uint32_t NetId = 0;
-	std::uint32_t ClassId = 0;
+	ObjectReplicationHeader ReplHeader;
+	InStream << ReplHeader;
 
-	InStream << NetId;
-	InStream << ClassId;
+	std::cout << "Received " << ReplHeader.mNetId << " " << ReplHeader.mClassId << '\n';
 
-	UObject* Obj = mLinkingContextPtr->GetObjectById(NetId);
-	if (!Obj)
+	switch (ReplHeader.mReplicationAction)
 	{
-		Obj = ObjectCreationRegistry::Get().CreateObject(ClassId);
-		mLinkingContextPtr->AddObject(Obj, NetId);
+	case RA_Create:
+	{
+		UObject* Obj = ObjectCreationRegistry::Get().CreateObject(ReplHeader.mClassId);
+		mLinkingContextPtr->AddObject(Obj, ReplHeader.mNetId);
+
+		InStream << *(static_cast<ISerializableObject*>(Obj));
+
+		return Obj;
+	}
+	case RA_Update:
+	{
+		if (UObject* Obj = mLinkingContextPtr->GetObjectById(ReplHeader.mNetId))
+		{
+			InStream << *(static_cast<ISerializableObject*>(Obj));
+			return Obj;
+		}
+		else
+		{
+			// For now just create a temporary object to read the buffer so we can continue the reading.
+			UObject* TmpObj = ObjectCreationRegistry::Get().CreateObject(ReplHeader.mClassId);
+
+			InStream << *(static_cast<ISerializableObject*>(TmpObj));
+			delete TmpObj;
+		}
+
+		break;
+	}
+	case RA_Destroy:
+	{
+		if (UObject* Obj = mLinkingContextPtr->GetObjectById(ReplHeader.mNetId))
+		{
+			mLinkingContextPtr->RemoveObject(Obj);
+			
+			//TODO: I shouldn't delete the object here
+			//Iterate pending to kill and delete at the end of the tick.
+			//Or Make those objects SharedPtrs to control their lifetime.
+
+			//Obj->Destroy();
+			
+			delete Obj;
+		}
+
+		break;
 	}
 
-	InStream << *(static_cast<ISerializableObject*>(Obj));
+	default:	
+		break;
+	}
 
-	std::cout << "Received " << NetId << ClassId << '\n';
 
-	return Obj;
+	return nullptr;
 }
 
 void NetDriver::InitNetSocket(ENetMode NetMode)
@@ -209,29 +254,32 @@ void NetDriver::Tick()
 					}
 				}
 
-				//Send
-				MemoryBitStream WriteStream;
-
-				//Just For testing proposes
-				std::vector<UObject*> Objects = std::vector<UObject*>(mReplicatedObjects.size()-1);
-				for (auto Obj : mReplicatedObjects)
+				if (ClientsAddress.size() > 0)
 				{
-					Objects.push_back(Obj);
-				}
-				//Just for testing proposes
+					//Send
+					MemoryBitStream WriteStream;
 
-				ReplicateWorldState(WriteStream, Objects);
+					//Just For testing proposes
+					std::vector<UObject*> Objects = std::vector<UObject*>(mReplicatedObjects.size()-1);
+					for (auto Obj : mReplicatedObjects)
+					{
+						Objects.push_back(Obj);
+					}
+					//Just for testing proposes
 
-				if (MTU_LIMIT_BYTES < WriteStream.GetLengthInBytes())
-				{
-					//Log error;
-					//TODO place to handle packet split
-					return;
-				}
+					ReplicateWorldState(WriteStream, Objects);
 
-				for (const auto& Address : ClientsAddress)
-				{
-					NetSocket->SendTo(WriteStream.GetBufferPtr(), WriteStream.GetLengthInBytes(), Address);
+					if (MTU_LIMIT_BYTES < WriteStream.GetLengthInBytes())
+					{
+						//Log error;
+						//TODO place to handle packet split
+						return;
+					}
+
+					for (const auto& Address : ClientsAddress)
+					{
+						NetSocket->SendTo(WriteStream.GetBufferPtr(), WriteStream.GetLengthInBytes(), Address);
+					}
 				}
 			}
 			else if (NetMode == ENetMode::ENM_Client)

@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include "Sockets/UDPSocket.h"
 #include "Sockets/SocketTypes.h"
+#include "NetTypes.h"
 
 class MemoryBitStream;
 class UObject;
@@ -28,7 +29,8 @@ private:
 
 	void ReceiveReplicatedWorldState(MemoryBitStream& InStream);
 	void ReplicateWorldState(MemoryBitStream& InStream, const std::vector<UObject*>& InWorldObjects);
-	void ReplicateObjectIntoStream(MemoryBitStream& InStream, UObject* InObject);
+	void ReplicateObjectIntoStream(MemoryBitStream& InStream, UObject* InObject, ReplicationAction InRA);
+
 	UObject* ReceiveReplicatedObject(MemoryBitStream& InStream);
 
 	std::unordered_set<UObject*> mReplicatedObjects;

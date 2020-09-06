@@ -7,3 +7,11 @@ enum PacketType
 	PT_Disconnect,
 	PT_MAX
 };
+
+enum ReplicationAction
+{
+	RA_Create,
+	RA_Update,
+	RA_Destroy,
+	RA_MAX
+};
