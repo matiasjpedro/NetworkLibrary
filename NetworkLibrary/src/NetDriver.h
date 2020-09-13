@@ -4,6 +4,8 @@
 #include "Sockets/UDPSocket.h"
 #include "Sockets/SocketTypes.h"
 #include "NetTypes.h"
+#include <memory>
+#include "Serialization/LinkingContext.h"
 
 class MemoryBitStream;
 class UObject;
@@ -25,15 +27,15 @@ public:
 
 private:
 
-	std::shared_ptr<class LinkingContext> mLinkingContextPtr;
+	LinkingContext mLinkingContext;
 
 	void ReceiveReplicatedWorldState(MemoryBitStream& InStream);
-	void ReplicateWorldState(MemoryBitStream& InStream, const std::vector<UObject*>& InWorldObjects);
+	void ReplicateWorldState(MemoryBitStream& InStream);
 	void ReplicateObjectIntoStream(MemoryBitStream& InStream, UObject* InObject, ReplicationAction InRA);
 
-	UObject* ReceiveReplicatedObject(MemoryBitStream& InStream);
+	void ReceiveReplicatedObject(MemoryBitStream& InStream);
 
-	std::unordered_set<UObject*> mReplicatedObjects;
+	std::unordered_set<std::unique_ptr<UObject>> mWorldObjects;
 
 	UDPSocketPtr NetSocket;
 	SocketAddress ServerAddress;

@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <unordered_map>
+#include <memory>
 
 class UObject;
 
@@ -8,8 +9,8 @@ class LinkingContext
 {
 public:
 
-	uint32_t GetNetworkId(UObject* InObject, bool InShouldCreateIfNotFound);
-	UObject* GetObjectById(uint32_t InNetId);
+	uint32_t GetNetId(UObject* InObject, bool InShouldCreateIfNotFound);
+	UObject* GetObjectByNetId(uint32_t InNetId);
 
 	void AddObject(UObject* InObject, uint32_t InNetId)
 	{
@@ -23,6 +24,8 @@ public:
 		mObjectToNetIdMap.erase(InObject);
 		mNetIdToObjectMap.erase(NetId);
 	}
+
+	void RemoveObjectById(uint32_t InNetId);
 
 private:
 	std::unordered_map<uint32_t, UObject*> mNetIdToObjectMap;

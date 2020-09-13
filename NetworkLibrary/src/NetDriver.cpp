@@ -17,8 +17,6 @@ static constexpr int MTU_LIMIT_BYTES = 1300;
 
 void NetDriver::Init()
 {
-	mLinkingContextPtr = std::make_shared<LinkingContext>();
-
 	ObjectCreationRegistry::Get().RegisterCreationFunction<UObject>();
 
 	WSADATA wsaData;
@@ -41,8 +39,7 @@ void NetDriver::Init()
 	if (NetMode == ENetMode::ENM_DedicatedServer)
 	{
 		// Just For testing proposes
-		UObject* TestObj = new UObject();
-		mReplicatedObjects.insert(TestObj);
+		mWorldObjects.insert(std::make_unique<UObject>());
 		// Just For testing proposes
 
 	}
@@ -74,56 +71,39 @@ void NetDriver::Shutdown()
 	}
 }
 
-void NetDriver::ReplicateWorldState(MemoryBitStream& InStream, const std::vector<UObject*>& InWorldObjects)
+void NetDriver::ReplicateWorldState(MemoryBitStream& InStream)
 {
 	PacketType Package = PacketType::PT_ReplicationData; 
 	InStream.SerializeBits(&Package, GetRequiredBits<(int)PacketType::PT_MAX>::Value);
 
-	InStream << (uint32_t)InWorldObjects.size();
+	//TODO: Implement GridGraph Here to know which actor we want to replicate to which actor.
 
-	//TODO: Implement GridGraph Here
-	for (UObject* WorldObject : InWorldObjects)
+	InStream << (uint32_t)mWorldObjects.size();
+	
+	for (const std::unique_ptr<UObject>& Obj : mWorldObjects)
 	{
-		ReplicateObjectIntoStream(InStream, WorldObject, ReplicationAction::RA_Create);	
+		//TODO: Replicate update instead of create if those are were already created
+		//I could use the concept of actor channels to ack the creation in the client.
+		ReplicateObjectIntoStream(InStream, Obj.get(), ReplicationAction::RA_Create);
 	}
 }
 
 void NetDriver::ReceiveReplicatedWorldState(MemoryBitStream& InStream)
 {
-
 	int Amount = 0;
 	InStream << Amount;
 
-	std::unordered_set<UObject*> ReceivedObjects;
-	ReceivedObjects.reserve(Amount);
-
 	while (Amount > 0)
 	{
-		UObject* ReceivedObject = ReceiveReplicatedObject(InStream);
-		if (ReceivedObject != nullptr)
-		{
-			ReceivedObjects.insert(ReceivedObject);
-		}
+		ReceiveReplicatedObject(InStream);
 		Amount--;
 	}
-
-	// [CHANGE] Really naive and basic approach, assuming I'll receive the state of all the actors
-	for (UObject* Obj : mReplicatedObjects)
-	{
-		if (ReceivedObjects.find(Obj) != ReceivedObjects.end() && !Obj->IsPendingToKill())
-		{
-			mLinkingContextPtr->RemoveObject(Obj);
-			Obj->Destroy();
-		}
-	}
-
-	mReplicatedObjects = ReceivedObjects;
 }
 
 void NetDriver::ReplicateObjectIntoStream(MemoryBitStream& InStream, UObject* InObject, ReplicationAction InRA)
 {
 	const bool bShouldCreate = InRA == ReplicationAction::RA_Create;
-	ObjectReplicationHeader ReplHeader = ObjectReplicationHeader(ReplicationAction::RA_Create, mLinkingContextPtr->GetNetworkId(InObject, bShouldCreate), InObject->GetClassId());
+	ObjectReplicationHeader ReplHeader = ObjectReplicationHeader(ReplicationAction::RA_Create, mLinkingContext.GetNetId(InObject, bShouldCreate), InObject->GetClassId());
 
 	InStream << ReplHeader;
 
@@ -133,7 +113,7 @@ void NetDriver::ReplicateObjectIntoStream(MemoryBitStream& InStream, UObject* In
 	}
 }
 
-UObject* NetDriver::ReceiveReplicatedObject(MemoryBitStream& InStream)
+void NetDriver::ReceiveReplicatedObject(MemoryBitStream& InStream)
 {
 	ObjectReplicationHeader ReplHeader;
 	InStream << ReplHeader;
@@ -144,55 +124,41 @@ UObject* NetDriver::ReceiveReplicatedObject(MemoryBitStream& InStream)
 	{
 	case RA_Create:
 	{
-		UObject* Obj = ObjectCreationRegistry::Get().CreateObject(ReplHeader.mClassId);
-		mLinkingContextPtr->AddObject(Obj, ReplHeader.mNetId);
+		if (mLinkingContext.GetObjectByNetId(ReplHeader.mNetId) == nullptr)
+		{
+			UObject* Obj = ObjectCreationRegistry::Get().CreateObject(ReplHeader.mClassId);
+			mLinkingContext.AddObject(Obj, ReplHeader.mNetId);
 
-		InStream << *(static_cast<ISerializableObject*>(Obj));
+			InStream << *(static_cast<ISerializableObject*>(Obj));
+		}
 
-		return Obj;
+		break;
 	}
 	case RA_Update:
 	{
-		if (UObject* Obj = mLinkingContextPtr->GetObjectById(ReplHeader.mNetId))
+		if (UObject* Obj = mLinkingContext.GetObjectByNetId(ReplHeader.mNetId))
 		{
 			InStream << *(static_cast<ISerializableObject*>(Obj));
-			return Obj;
 		}
 		else
 		{
 			// For now just create a temporary object to read the buffer so we can continue the reading.
-			UObject* TmpObj = ObjectCreationRegistry::Get().CreateObject(ReplHeader.mClassId);
-
-			InStream << *(static_cast<ISerializableObject*>(TmpObj));
-			delete TmpObj;
+			// Unless we have a size function to know when this object is finish.
+			std::unique_ptr<UObject> TmpObj = std::unique_ptr<UObject>(ObjectCreationRegistry::Get().CreateObject(ReplHeader.mClassId));
+			InStream << *(static_cast<ISerializableObject*>(TmpObj.get()));
 		}
 
 		break;
 	}
 	case RA_Destroy:
 	{
-		if (UObject* Obj = mLinkingContextPtr->GetObjectById(ReplHeader.mNetId))
-		{
-			mLinkingContextPtr->RemoveObject(Obj);
-			
-			//TODO: I shouldn't delete the object here
-			//Iterate pending to kill and delete at the end of the tick.
-			//Or Make those objects SharedPtrs to control their lifetime.
-
-			//Obj->Destroy();
-			
-			delete Obj;
-		}
-
-		break;
+		mLinkingContext.RemoveObjectById(ReplHeader.mNetId);
+		//TODO: We should only mark it for delete so we can give time other system to clean logic up
 	}
 
 	default:	
 		break;
 	}
-
-
-	return nullptr;
 }
 
 void NetDriver::InitNetSocket(ENetMode NetMode)
@@ -258,27 +224,20 @@ void NetDriver::Tick()
 				{
 					//Send
 					MemoryBitStream WriteStream;
+					ReplicateWorldState(WriteStream);
 
-					//Just For testing proposes
-					std::vector<UObject*> Objects = std::vector<UObject*>(mReplicatedObjects.size()-1);
-					for (auto Obj : mReplicatedObjects)
+					if (WriteStream.GetLengthInBytes() < MTU_LIMIT_BYTES)
 					{
-						Objects.push_back(Obj);
+						for (const auto& Address : ClientsAddress)
+						{
+							NetSocket->SendTo(WriteStream.GetBufferPtr(), WriteStream.GetLengthInBytes(), Address);
+						}
+						
 					}
-					//Just for testing proposes
-
-					ReplicateWorldState(WriteStream, Objects);
-
-					if (MTU_LIMIT_BYTES < WriteStream.GetLengthInBytes())
+					else
 					{
 						//Log error;
 						//TODO place to handle packet split
-						return;
-					}
-
-					for (const auto& Address : ClientsAddress)
-					{
-						NetSocket->SendTo(WriteStream.GetBufferPtr(), WriteStream.GetLengthInBytes(), Address);
 					}
 				}
 			}

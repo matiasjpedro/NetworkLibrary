@@ -6,11 +6,7 @@ int main()
 {
 	NetworkLibraryTests::RunInternalTests();
 
-	//DoTCPChat();
-
-	NetDriver CurrentNetDriver;
-
-	CurrentNetDriver.Init();
-
-	CurrentNetDriver.Tick();
+ 	NetDriver CurrentNetDriver;
+ 	CurrentNetDriver.Init();
+ 	CurrentNetDriver.Tick();
 }
