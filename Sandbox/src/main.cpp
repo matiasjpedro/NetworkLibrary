@@ -1,12 +1,11 @@
 #include "UnitTesting/NetworkLibraryTests.h"
-#include "Chat.h"
-#include "NetDriver.h"
+#include "TrafficTester.h"
 
 int main()
 {
-	NetworkLibraryTests::RunInternalTests();
+	//NetworkLibraryTests::RunInternalTests();
 
- 	NetDriver CurrentNetDriver;
- 	CurrentNetDriver.Init();
- 	CurrentNetDriver.Tick();
+ 	TrafficTester traffic_Tester;
+    traffic_Tester.init();
+    traffic_Tester.update();
 }

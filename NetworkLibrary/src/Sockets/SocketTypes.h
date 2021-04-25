@@ -127,7 +127,7 @@ public:
 
 	int GetSize() const { return sizeof(sockaddr); }
 
-	std::string ToString() const
+	std::string ToString(bool include_port = true) const
 	{
 		const sockaddr_in* AddrIn = (const sockaddr_in*)&mSockAddr;
 		
@@ -147,8 +147,11 @@ public:
 			NullTermination++;
 		}
 
+		
 		std::string r(s, NullTermination);
-		r += ":" + std::to_string(port);
+		if (include_port) {
+			r += ":" + std::to_string(port);
+		}
 
 		return r;
 	}
