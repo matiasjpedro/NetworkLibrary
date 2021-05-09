@@ -4,6 +4,7 @@
 int UDPSocket::Bind(const SocketAddress& InToAddress)
 {
 	int Result = bind(mSocket, &InToAddress.mSockAddr, InToAddress.GetSize());
+
 	if (Result == SOCKET_ERROR)
 	{
 		SocketUtil::ReportError("UDPSocket::Bind");
@@ -16,7 +17,6 @@ int UDPSocket::Bind(const SocketAddress& InToAddress)
 int UDPSocket::SendTo(const void* InData, int InLen, const SocketAddress& InTo)
 {
 	int ByteSentCount = sendto(mSocket, static_cast<const char*>(InData), InLen, 0, &InTo.mSockAddr, InTo.GetSize());
-
 	if (ByteSentCount == SOCKET_ERROR)
 	{
 		SocketUtil::ReportError("UDPSocket::SendTo");

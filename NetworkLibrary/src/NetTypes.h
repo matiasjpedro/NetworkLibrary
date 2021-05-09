@@ -3,6 +3,7 @@
 enum PacketType
 {
 	PT_Hello,
+	PT_PeerAddresses,
 	PT_ReplicationData,
 	PT_Disconnect,
 	PT_MAX
